@@ -398,7 +398,16 @@
                 <i class="fa-solid fa-calendar-days text-xl"></i>
             </div>
             <div>
-                <h1 class="text-2xl font-bold theme-text tracking-tight" style="font-family: Calibri, sans-serif;">MyPlanner</h1>
+                <!-- 修改点：添加 id、contenteditable 和相关事件，支持直接重命名 -->
+                <h1 id="appTitle" 
+                    contenteditable="true" 
+                    spellcheck="false"
+                    class="text-2xl font-bold theme-text tracking-tight outline-none border-b-2 border-transparent focus:border-current cursor-text transition-all min-w-[100px]" 
+                    style="font-family: Calibri, sans-serif;"
+                    onblur="saveAppTitle()"
+                    onkeydown="handleTitleKeydown(event)">
+                    MyPlanner
+                </h1>
                 <p class="text-gray-500 font-medium text-sm mt-0.5" id="headerDate">Loading...</p>
             </div>
         </div>
@@ -757,6 +766,8 @@
                 glassOpacity: 0.95,
                 imgOpacity: 0.5,
                 bg: '',
+                // 修改点：新增应用标题字段
+                appTitle: 'MyPlanner',
                 // 新增：任务常用颜色预设 (5个)
                 taskPresets: ['#558B2F', '#1976D2', '#F57C00', '#C2185B', '#7B1FA2']
             }
@@ -817,6 +828,12 @@
             if (!data.settings.taskPresets || data.settings.taskPresets.length === 0) {
                 data.settings.taskPresets = ['#558B2F', '#1976D2', '#F57C00', '#C2185B', '#7B1FA2'];
             }
+            
+            // 修改点：初始化时设置应用标题
+            if (data.settings.appTitle) {
+                document.getElementById('appTitle').innerText = data.settings.appTitle;
+            }
+
             updateHeaderDate();
             applyStyles();
             renderAll();
@@ -1746,6 +1763,28 @@
         function showDayDetail(dateStr) {
             const goals = data.goals.filter(g => g.ddl === dateStr && !g.completed);
             if (goals.length > 0) alert(`${dateStr} 有 ${goals.length} 个截止目标:\n${goals.map(g => '• ' + g.title).join('\n')}`);
+        }
+        
+        // 修改点：处理标题修改的事件函数
+        function saveAppTitle() {
+            const titleEl = document.getElementById('appTitle');
+            const newTitle = titleEl.innerText.trim();
+            
+            if (!newTitle) {
+                // 如果为空，恢复默认
+                titleEl.innerText = 'MyPlanner';
+                data.settings.appTitle = 'MyPlanner';
+            } else {
+                data.settings.appTitle = newTitle;
+            }
+            saveData();
+        }
+
+        function handleTitleKeydown(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // 阻止换行
+                document.getElementById('appTitle').blur(); // 失去焦点以保存
+            }
         }
 
         init();
