@@ -7,12 +7,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --theme-color: #558B2F;
-            --theme-light: #DCEDC8;
+            /* 还原：您的专属深苔绿主题 */
+            --theme-color: #4c6c02;
+            --theme-light: rgba(76, 108, 2, 0.1);
             --glass-opacity: 0.95;
             --img-opacity: 0.5;
             --bg-image: none;
-            --bg-color: #f3f4f6;
+            /* 还原：您的专属莫兰迪浅绿灰背景 */
+            --bg-color: #f3f6f3;
         }
         
         body {
@@ -126,6 +128,25 @@
             color: white;
         }
 
+        /* 批量选择复选框 */
+        .bulk-checkbox {
+            width: 20px; height: 20px;
+            border: 2px solid #d1d5db;
+            border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.1s; 
+            cursor: pointer;
+            background: white;
+        }
+        .bulk-checkbox.selected {
+            background-color: #ef4444;
+            border-color: #ef4444;
+        }
+        .bulk-checkbox i {
+            color: white; font-size: 12px; opacity: 0;
+        }
+        .bulk-checkbox.selected i { opacity: 1; }
+
         .panel-wrapper {
             flex: 1;
             transition: flex-grow 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
@@ -179,14 +200,13 @@
             box-shadow: 0 0 0 3px var(--theme-light);
         }
         
-        /* 日期数字加粗高亮 (全部目标视图) */
         .date-highlight-theme {
             color: var(--theme-color);
             font-weight: 800;
             font-size: 1.1em;
         }
 
-        /* 红色圆圈样式 (具体目标视图 & 详情页) */
+        /* 红色圆圈样式 (具体目标日历截止日) */
         .date-circle-red {
             border: 2px solid #ef4444; 
             color: #ef4444;            
@@ -198,7 +218,6 @@
             font-weight: bold;
         }
 
-        /* 全部目标视图的目标标签 */
         .cal-goal-tag {
             font-size: 12px; 
             color: var(--theme-color); 
@@ -372,7 +391,6 @@
             z-index: 60 !important;
         }
 
-        /* 颜色选择器样式 (统一为40px圆角正方形) */
         .color-input-square {
             width: 40px; 
             height: 40px;
@@ -392,7 +410,6 @@
             border-radius: 6px;
         }
 
-        /* 自定义方案方块 (40px) */
         .scheme-slot {
             width: 40px; 
             height: 40px; 
@@ -414,7 +431,6 @@
             border: 2px solid #e5e7eb;
             background-image: linear-gradient(135deg, var(--slot-theme) 50%, var(--slot-bg) 50%);
         }
-        /* 清除按钮 */
         .scheme-clear {
             position: absolute;
             top: -6px; right: -6px;
@@ -519,6 +535,9 @@
                         <span class="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full" id="taskCountBadge">0</span>
                     </div>
                     <div class="flex gap-3 items-center">
+                        <button id="bulkSelectBtn" onclick="event.stopPropagation(); toggleSelectionMode()" class="add-btn-theme text-xs bg-white px-2 py-1 rounded-full shadow-sm text-gray-600 flex items-center gap-1" title="批量管理">
+                            <i class="fa-solid fa-list-check"></i>
+                        </button>
                         <button id="addTaskBtn" onclick="event.stopPropagation(); openAddTaskModal()" class="add-btn-theme text-xs bg-white px-2 py-1 rounded-full shadow-sm text-gray-600 flex items-center gap-1">
                             <i class="fa-solid fa-plus"></i>
                         </button>
@@ -528,7 +547,14 @@
                 <div id="stepsWrapper" class="panel-wrapper">
                     <div class="panel-inner flex flex-col h-full bg-white/30">
                         <div id="stepsList" class="space-y-3 p-4 flex-1 overflow-y-auto custom-scrollbar"></div>
-                        <div class="p-3 pt-2 border-t-0 bg-transparent shrink-0">
+                        
+                        <div id="bulkDeleteBar" class="p-3 pt-2 border-t-0 bg-transparent shrink-0 hidden">
+                            <button onclick="deleteSelectedTasks()" class="w-full bg-red-500 text-white py-2 rounded-lg font-bold hover:bg-red-600 transition shadow-sm text-sm">
+                                <i class="fa-solid fa-trash mr-2"></i>删除选中任务
+                            </button>
+                        </div>
+
+                        <div id="quickAddBar" class="p-3 pt-2 border-t-0 bg-transparent shrink-0">
                             <div class="flex gap-2 shadow-sm rounded-lg overflow-hidden border border-gray-200 bg-white" style="height: 36px;">
                                 <input type="text" id="quickIndependentInput" placeholder="快速添加今日任务..." class="flex-1 px-3 py-1 outline-none text-gray-700 text-sm" onkeydown="if(event.key==='Enter')addQuickTask()">
                                 <button onclick="addQuickTask()" class="theme-bg text-white px-3 flex items-center justify-center hover:opacity-90 transition shrink-0" title="添加" style="width: 36px;">
@@ -590,7 +616,7 @@
                 <i class="fa-solid fa-tasks mr-2"></i>新建任务
             </h3>
             <label class="block text-sm font-bold text-gray-700 mb-1">任务名称</label>
-            <input type="text" id="taskTitle" class="w-full mb-4 p-3 border rounded-lg outline-none focus:ring-2 focus:ring-[var(--theme-color)] bg-gray-50" placeholder="输入任务名称..." onkeydown="if(event.key==='Enter')saveTaskFromModal()">
+            <input type="text" id="taskTitle" class="w-full mb-4 p-3 border rounded-lg outline-none focus:ring-2 focus:ring-[var(--theme-color)] bg-gray-50" placeholder="输入任务名称...">
             
             <div class="flex gap-4 mb-2">
                 <div class="flex-1">
@@ -804,14 +830,16 @@
             subtasks: [],
             categories: ['工作', '学习', '生活', '健康'],
             settings: {
-                theme: '#558B2F',
+                // 2. 还原：默认配色 (深苔绿 + 浅灰绿)
+                theme: '#4c6c02',
                 themeOpacity: 1,
                 glassOpacity: 0.95,
                 imgOpacity: 0.5,
                 bg: '',
-                bgColor: '#f3f4f6', 
+                bgColor: '#f3f6f3', 
                 appTitle: 'My Planner', 
-                taskPresets: ['#558B2F', '#1976D2', '#F57C00', '#C2185B', '#7B1FA2'],
+                // 2. 还原：莫兰迪色系标签
+                taskPresets: ["#81ad62", "#84b1ca", "#f0c035", "#e294b3", "#b7aad8"],
                 customSchemes: [null, null, null] 
             }
         };
@@ -819,6 +847,10 @@
         let currentGoalId = null;
         let editingGoalId = null;
         let currentView = 'calendar';
+        
+        // 批量选择模式状态
+        let isSelectionMode = false;
+        let selectedTasks = new Set();
 
         // ==================== 工具函数 ====================
         function hexToRgb(hex) {
@@ -866,10 +898,11 @@
         // ==================== 初始化 ====================
         function init() {
             loadData();
+            // 兼容性处理
             if (!data.settings.taskPresets || data.settings.taskPresets.length === 0) {
-                data.settings.taskPresets = ['#558B2F', '#1976D2', '#F57C00', '#C2185B', '#7B1FA2'];
+                data.settings.taskPresets = ["#81ad62", "#84b1ca", "#f0c035", "#e294b3", "#b7aad8"];
             }
-            if (!data.settings.bgColor) data.settings.bgColor = '#f3f4f6';
+            if (!data.settings.bgColor) data.settings.bgColor = '#f3f6f3';
             if (!data.settings.customSchemes) data.settings.customSchemes = [null, null, null];
             
             if (data.settings.appTitle) {
@@ -884,7 +917,8 @@
         }
 
         function loadData() {
-            const saved = localStorage.getItem('dailyPlannerPro_v13');
+            // 2. 升级版本 v16，强制刷新默认配色
+            const saved = localStorage.getItem('dailyPlannerPro_v16');
             if (saved) {
                 try {
                     const parsed = JSON.parse(saved);
@@ -901,10 +935,23 @@
                 if (e.key === 'Enter') addSubtaskFromInput();
             });
             document.getElementById('localBgInput').addEventListener('change', handleImageUpload);
+            // 1. 修复：注册全局键盘监听
             document.addEventListener('keydown', handleKeyboardShortcuts);
         }
 
+        // 1. 修复：全局键盘监听，增加任务弹窗的回车保存逻辑
         function handleKeyboardShortcuts(e) {
+            // 新增：任务弹窗回车保存
+            const taskModal = document.getElementById('taskModal');
+            if (!taskModal.classList.contains('hidden')) {
+                if (e.key === 'Enter') {
+                    e.preventDefault(); // 阻止其他默认行为
+                    saveTaskFromModal();
+                    return;
+                }
+            }
+
+            // 原有快捷键
             if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
                 e.preventDefault(); openAddGoalModal();
             }
@@ -918,7 +965,6 @@
             });
         }
 
-        // ==================== 视图切换 ====================
         function switchView(viewName) {
             currentView = viewName;
             document.getElementById('btn-calendar').classList.remove('active');
@@ -929,7 +975,19 @@
             document.getElementById(`${viewName}View`).classList.add('active');
         }
 
-        // ==================== 渲染函数 ====================
+        // 1. 修复：统一的视图刷新函数，确保无死角刷新
+        function refreshViews() {
+            saveData();
+            renderAll(); // 刷新主界面
+            
+            // 1. 修复：只要详情页是打开的，就强制刷新详情页内容
+            const detailModal = document.getElementById('detailModal');
+            if (!detailModal.classList.contains('hidden') && currentGoalId) {
+                renderDetailTaskList(); // 确保右侧列表刷新
+                renderDetailCalendar(); // 确保左侧日历刷新
+            }
+        }
+
         function renderAll() {
             renderGoals();
             renderDailySteps();
@@ -1038,6 +1096,17 @@
 
         function renderDailySteps() {
             const container = document.getElementById('stepsList');
+            const btn = document.getElementById('bulkSelectBtn');
+            if (isSelectionMode) {
+                btn.classList.add('bg-red-100', 'text-red-500');
+                document.getElementById('bulkDeleteBar').classList.remove('hidden');
+                document.getElementById('quickAddBar').classList.add('hidden');
+            } else {
+                btn.classList.remove('bg-red-100', 'text-red-500');
+                document.getElementById('bulkDeleteBar').classList.add('hidden');
+                document.getElementById('quickAddBar').classList.remove('hidden');
+            }
+
             let tasks = data.subtasks.filter(s => 
                 !s.completed && 
                 (!s.goalId || (data.goals.find(g => g.id === s.goalId) && !data.goals.find(g => g.id === s.goalId).completed))
@@ -1079,15 +1148,35 @@
             const parent = s.goalId ? data.goals.find(g => g.id === s.goalId) : null;
             let bg = type === 'today' ? 'bg-white shadow-md transform scale-[1.01]' : 'bg-white/80 hover:bg-white shadow-sm';
             
+            let checkboxHtml;
+            if (isSelectionMode) {
+                const isSelected = selectedTasks.has(s.id);
+                checkboxHtml = `
+                <div id="bulk-check-${s.id}" class="bulk-checkbox ${isSelected ? 'selected' : ''} mr-3">
+                    <i class="fa-solid fa-check"></i>
+                </div>`;
+            } else {
+                checkboxHtml = `
+                <div class="flex gap-2">
+                    <button onclick="deleteTask('${s.id}')" class="w-7 h-7 rounded-full hover:bg-red-50 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition">
+                        <i class="fa-solid fa-trash text-xs"></i>
+                    </button>
+                    <button onclick="toggleTaskStatus('${s.id}')" class="task-checkbox w-7 h-7 rounded-full border-2 border-gray-300 flex items-center justify-center transition hover:border-[var(--theme-color)]">
+                        <i class="fa-solid fa-check text-xs opacity-0 group-hover:opacity-100 text-gray-400"></i>
+                    </button>
+                </div>`;
+            }
+
+            const clickAction = isSelectionMode ? `onclick="toggleTaskSelection('${s.id}')"` : '';
+
             return `
-            <div class="${bg} p-3 rounded-xl flex items-center justify-between group transition mb-2 fade-in-up relative overflow-hidden">
+            <div class="${bg} p-3 rounded-xl flex items-center justify-between group transition mb-2 fade-in-up relative overflow-hidden" ${clickAction}>
                 <div class="absolute top-0 left-0 w-1 h-full theme-bg"></div>
+                ${isSelectionMode ? checkboxHtml : ''}
                 <div class="flex-1 min-w-0 mr-3 pl-2">
                     <div class="flex items-center gap-2 mb-1">
-                        <span class="font-semibold text-gray-800 text-sm truncate cursor-text" ondblclick="editTask('${s.id}')" title="${s.title}">${s.title}</span>
-                        <button onclick="editTask('${s.id}')" class="opacity-0 group-hover:opacity-100 text-xs text-gray-300 edit-btn-theme transition">
-                            <i class="fa-solid fa-pencil"></i>
-                        </button>
+                        <span class="font-semibold text-gray-800 text-sm truncate cursor-text" ${!isSelectionMode ? `ondblclick="editTask('${s.id}')"` : ''} title="${s.title}">${s.title}</span>
+                        ${!isSelectionMode ? `<button onclick="editTask('${s.id}')" class="opacity-0 group-hover:opacity-100 text-xs text-gray-300 edit-btn-theme transition"><i class="fa-solid fa-pencil"></i></button>` : ''}
                     </div>
                     <div class="text-xs text-gray-500 flex gap-3 items-center">
                         <span class="${type === 'past' ? 'text-red-500 font-bold' : ''}">
@@ -1096,15 +1185,40 @@
                         ${parent ? `<span class="theme-tag truncate max-w-[80px]" title="${parent.title}">${parent.title}</span>` : ''}
                     </div>
                 </div>
-                <div class="flex gap-2">
-                    <button onclick="deleteTask('${s.id}')" class="w-7 h-7 rounded-full hover:bg-red-50 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition">
-                        <i class="fa-solid fa-trash text-xs"></i>
-                    </button>
-                    <button onclick="toggleTaskStatus('${s.id}')" class="task-checkbox w-7 h-7 rounded-full border-2 border-gray-300 flex items-center justify-center transition hover:border-[var(--theme-color)]">
-                        <i class="fa-solid fa-check text-xs opacity-0 group-hover:opacity-100 text-gray-400"></i>
-                    </button>
-                </div>
+                ${!isSelectionMode ? checkboxHtml : ''}
             </div>`;
+        }
+
+        function toggleSelectionMode() {
+            isSelectionMode = !isSelectionMode;
+            selectedTasks.clear();
+            renderDailySteps();
+        }
+
+        function toggleTaskSelection(id) {
+            if (selectedTasks.has(id)) {
+                selectedTasks.delete(id);
+            } else {
+                selectedTasks.add(id);
+            }
+
+            const checkboxEl = document.getElementById(`bulk-check-${id}`);
+            if (checkboxEl) {
+                if (selectedTasks.has(id)) {
+                    checkboxEl.classList.add('selected');
+                } else {
+                    checkboxEl.classList.remove('selected');
+                }
+            }
+        }
+
+        function deleteSelectedTasks() {
+            if (selectedTasks.size === 0) return alert('请先勾选任务');
+            if (!confirm(`确定删除这 ${selectedTasks.size} 个任务吗？`)) return;
+            
+            data.subtasks = data.subtasks.filter(s => !selectedTasks.has(s.id));
+            toggleSelectionMode(); 
+            refreshViews();
         }
 
         function renderGoals() {
@@ -1265,7 +1379,37 @@
             }
         }
 
-        // ==================== 基本数据操作 ====================
+        // 1. 修复：renderDetailTaskList (确保正确显示所有任务)
+        function renderDetailTaskList() {
+            const listContainer = document.getElementById('detailTaskList');
+            const tasks = data.subtasks.filter(s => s.goalId === currentGoalId);
+            tasks.sort((a, b) => parseDateStr(a.date) - parseDateStr(b.date));
+            
+            if (tasks.length === 0) {
+                listContainer.innerHTML = `<div class="empty-state"><i class="fa-solid fa-tasks"></i><p>暂无任务</p></div>`;
+                return;
+            }
+            
+            listContainer.innerHTML = tasks.map(s => `
+                <div class="flex items-center gap-3 p-3 bg-white border border-gray-100 rounded-lg hover:shadow-sm transition group fade-in-up">
+                    <button onclick="toggleTaskStatus('${s.id}')" class="task-checkbox ${s.completed ? 'checked' : ''} w-6 h-6 rounded-full border-2 ${s.completed ? 'border-[var(--theme-color)] bg-[var(--theme-color)]' : 'border-gray-300 bg-white'} flex items-center justify-center transition hover:border-[var(--theme-color)]">
+                        <i class="fa-solid fa-check text-xs ${s.completed ? 'text-white' : 'text-transparent'}"></i>
+                    </button>
+                    <div class="flex-1 ${s.completed ? 'line-through text-gray-400' : 'text-gray-700'}">
+                        <div class="text-sm font-medium cursor-text" ondblclick="editTask('${s.id}')" title="${s.title}">${s.title}</div>
+                        <div class="text-xs text-gray-400"><i class="fa-regular fa-calendar mr-1"></i>${formatDate(s.date)}</div>
+                    </div>
+                    <button onclick="editTask('${s.id}')" class="text-gray-300 edit-btn-theme opacity-0 group-hover:opacity-100 transition px-2"><i class="fa-solid fa-pencil"></i></button>
+                    <button onclick="deleteTask('${s.id}')" class="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition px-2"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `).join('');
+            
+            const goal = data.goals.find(g => g.id === currentGoalId);
+            if (tasks.length > 0 && tasks.every(t => t.completed) && !goal.completed) {
+                listContainer.innerHTML += `<button onclick="completeGoal('${currentGoalId}')" class="w-full mt-4 py-3 bg-green-100 text-green-700 rounded-xl hover:bg-green-200 transition font-bold shadow-sm">🎉 任务全部完成，归档该目标！</button>`;
+            }
+        }
+
         function openAddGoalModal() {
             editingGoalId = null;
             document.getElementById('goalModalTitle').innerHTML = '<i class="fa-solid fa-flag mr-2"></i>新建目标';
@@ -1404,7 +1548,10 @@
             defaultBtn.innerHTML = '<i class="fa-solid fa-palette text-gray-400 text-xs"></i>';
             container.appendChild(defaultBtn);
 
-            if (!data.settings.taskPresets) data.settings.taskPresets = ['#558B2F', '#1976D2', '#F57C00', '#C2185B', '#7B1FA2'];
+            // 2. 还原：莫兰迪色系
+            if (!data.settings.taskPresets || data.settings.taskPresets.length === 0) {
+                data.settings.taskPresets = ["#81ad62", "#84b1ca", "#f0c035", "#e294b3", "#b7aad8"];
+            }
             
             data.settings.taskPresets.forEach((color, index) => {
                 const wrapper = document.createElement('div');
@@ -1433,7 +1580,9 @@
         function renderSettingsPresets() {
             const container = document.getElementById('settingsPresetContainer');
             container.innerHTML = '';
-             if (!data.settings.taskPresets) data.settings.taskPresets = ['#558B2F', '#1976D2', '#F57C00', '#C2185B', '#7B1FA2'];
+             if (!data.settings.taskPresets || data.settings.taskPresets.length === 0) {
+                 data.settings.taskPresets = ["#81ad62", "#84b1ca", "#f0c035", "#e294b3", "#b7aad8"];
+             }
              
              data.settings.taskPresets.forEach((color, index) => {
                  const wrapper = document.createElement('div');
@@ -1530,44 +1679,43 @@
             if (!title) { alert('请输入任务名称'); return; }
             if (!date) { alert('请选择日期'); return; }
             
-            if (editingTaskId) {
-                const task = data.subtasks.find(s => s.id === editingTaskId);
-                if (task) {
-                    task.title = title;
-                    task.date = date;
-                    task.goalId = goalId;
-                    task.color = color;
-                    saveData();
-                    renderAll();
-                    if (currentGoalId) { renderDetailTaskList(); renderDetailCalendar(); }
-                }
-                editingTaskId = null;
-            } else {
-                if (isRepeat && endDateStr) {
-                    const start = parseDateStr(date);
-                    const end = parseDateStr(endDateStr);
-                    if (end < start) { alert('结束日期不能早于开始日期'); return; }
-                    let loopDate = new Date(start);
-                    while (loopDate <= end) {
-                        const dStr = formatDateToISO(loopDate);
-                        data.subtasks.push({
-                            id: Date.now() + Math.random().toString(), 
-                            title: title,
-                            date: dStr,
-                            goalId: goalId,
-                            completed: false,
-                            color: color || ''
-                        });
-                        loopDate.setDate(loopDate.getDate() + 1);
-                    }
-                    saveData();
-                    renderAll();
-                    if (currentGoalId) { renderDetailTaskList(); renderDetailCalendar(); }
-                } else {
-                    addTaskData(title, date, goalId, color);
-                }
-            }
             closeModal('taskModal');
+
+            setTimeout(() => {
+                if (editingTaskId) {
+                    const task = data.subtasks.find(s => s.id === editingTaskId);
+                    if (task) {
+                        task.title = title;
+                        task.date = date;
+                        task.goalId = goalId;
+                        task.color = color;
+                        refreshViews(); // 1. 统一刷新
+                    }
+                    editingTaskId = null;
+                } else {
+                    if (isRepeat && endDateStr) {
+                        const start = parseDateStr(date);
+                        const end = parseDateStr(endDateStr);
+                        if (end < start) { alert('结束日期不能早于开始日期'); return; }
+                        let loopDate = new Date(start);
+                        while (loopDate <= end) {
+                            const dStr = formatDateToISO(loopDate);
+                            data.subtasks.push({
+                                id: Date.now() + Math.random().toString(), 
+                                title: title,
+                                date: dStr,
+                                goalId: goalId,
+                                completed: false,
+                                color: color || ''
+                            });
+                            loopDate.setDate(loopDate.getDate() + 1);
+                        }
+                        refreshViews(); // 1. 统一刷新
+                    } else {
+                        addTaskData(title, date, goalId, color);
+                    }
+                }
+            }, 10);
         }
         
         function deleteTaskFromModal() {
@@ -1604,24 +1752,22 @@
             setTaskColor('');
         }
 
+        // 1. 修复：统一刷新
         function addTaskData(title, dateStr, goalId, color) {
             data.subtasks.push({ id: Date.now() + '', title, date: dateStr, goalId: goalId, completed: false, color: color || '' });
-            saveData(); renderAll();
-            if (currentGoalId) { renderDetailTaskList(); renderDetailCalendar(); }
+            refreshViews();
         }
 
         function toggleTaskStatus(id) {
             const task = data.subtasks.find(s => s.id === id);
             task.completed = !task.completed;
-            saveData(); renderAll();
-            if (currentGoalId) { renderDetailTaskList(); renderDetailCalendar(); }
+            refreshViews();
         }
 
         function deleteTask(id) {
             if (!confirm('确定删除？')) return;
             data.subtasks = data.subtasks.filter(s => s.id !== id);
-            saveData(); renderAll();
-            if (currentGoalId) { renderDetailTaskList(); renderDetailCalendar(); }
+            refreshViews();
         }
 
         function openStats() {
@@ -1654,7 +1800,7 @@
         function openSettings() {
             document.getElementById('settingsModal').classList.remove('hidden');
             document.getElementById('themeColorPicker').value = data.settings.theme;
-            document.getElementById('bgColorPicker').value = data.settings.bgColor || '#f3f4f6';
+            document.getElementById('bgColorPicker').value = data.settings.bgColor || '#f3f6f3';
             document.getElementById('glassOpacityPicker').value = data.settings.glassOpacity;
             document.getElementById('imgOpacityPicker').value = data.settings.imgOpacity || 0.5;
             document.getElementById('categoriesInput').value = data.categories.join(', ');
@@ -1714,7 +1860,7 @@
         function applyStyles() {
             document.documentElement.style.setProperty('--theme-color', data.settings.theme);
             document.documentElement.style.setProperty('--theme-light', `rgba(${hexToRgb(data.settings.theme)}, 0.1)`);
-            document.documentElement.style.setProperty('--bg-color', data.settings.bgColor || '#f3f4f6');
+            document.documentElement.style.setProperty('--bg-color', data.settings.bgColor || '#f3f6f3');
             
             document.documentElement.style.setProperty('--glass-opacity', data.settings.glassOpacity);
             document.documentElement.style.setProperty('--img-opacity', data.settings.imgOpacity);
@@ -1746,7 +1892,8 @@
         }
 
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-        function saveData() { localStorage.setItem('dailyPlannerPro_v13', JSON.stringify(data)); }
+        // 2. 升级版本 v16
+        function saveData() { localStorage.setItem('dailyPlannerPro_v16', JSON.stringify(data)); }
         function showDayDetail(dateStr) {
             const goals = data.goals.filter(g => g.ddl === dateStr && !g.completed);
             if (goals.length > 0) alert(`${dateStr} 有 ${goals.length} 个截止目标:\n${goals.map(g => '• ' + g.title).join('\n')}`);
@@ -1771,7 +1918,6 @@
             }
         }
 
-        // 新增：导出数据功能
         function exportData() {
             const dataStr = JSON.stringify(data, null, 2);
             const blob = new Blob([dataStr], { type: 'application/json' });
@@ -1786,12 +1932,10 @@
             URL.revokeObjectURL(url);
         }
 
-        // 新增：触发导入
         function triggerImport() {
             document.getElementById('importFileInput').click();
         }
 
-        // 新增：执行导入逻辑
         function importData(input) {
             const file = input.files[0];
             if (!file) return;
@@ -1807,9 +1951,8 @@
                     
                     if (confirm('导入将覆盖当前的全部数据，确定要继续吗？')) {
                         data = importedData;
-                        // 兼容性检查
                         if (!data.settings) data.settings = {};
-                        if (!data.settings.taskPresets) data.settings.taskPresets = ['#558B2F', '#1976D2', '#F57C00', '#C2185B', '#7B1FA2'];
+                        if (!data.settings.taskPresets) data.settings.taskPresets = ["#81ad62", "#84b1ca", "#f0c035", "#e294b3", "#b7aad8"];
                         if (!data.settings.customSchemes) data.settings.customSchemes = [null, null, null];
                         
                         saveData();
