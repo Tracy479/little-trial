@@ -7,13 +7,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            /* 还原：您的专属深苔绿主题 */
+            /* 2. 还原：您的专属深苔绿主题 */
             --theme-color: #4c6c02;
             --theme-light: rgba(76, 108, 2, 0.1);
             --glass-opacity: 0.95;
             --img-opacity: 0.5;
             --bg-image: none;
-            /* 还原：您的专属莫兰迪浅绿灰背景 */
+            /* 2. 还原：您的专属莫兰迪浅绿灰背景 */
             --bg-color: #f3f6f3;
         }
         
@@ -680,7 +680,7 @@
                 <div class="md:col-span-8 p-6 overflow-y-auto custom-scrollbar border-r border-gray-100">
                     <div id="detailCalendarView" class="calendar-grid pb-20"></div>
                 </div>
-                <div class="md:col-span-4 flex flex-col h-full bg-gray-50/50">
+                <div class="md:col-span-4 flex flex-col h-full bg-gray-50/50 overflow-hidden">
                     <div class="p-5 border-b border-gray-100 bg-white">
                         <h4 class="font-bold text-gray-700 text-lg">
                             <i class="fa-solid fa-tasks mr-2"></i>任务清单
@@ -935,17 +935,16 @@
                 if (e.key === 'Enter') addSubtaskFromInput();
             });
             document.getElementById('localBgInput').addEventListener('change', handleImageUpload);
-            // 1. 修复：注册全局键盘监听
+            // 注册全局键盘监听
             document.addEventListener('keydown', handleKeyboardShortcuts);
         }
 
-        // 1. 修复：全局键盘监听，增加任务弹窗的回车保存逻辑
         function handleKeyboardShortcuts(e) {
-            // 新增：任务弹窗回车保存
+            // 任务弹窗回车保存
             const taskModal = document.getElementById('taskModal');
             if (!taskModal.classList.contains('hidden')) {
                 if (e.key === 'Enter') {
-                    e.preventDefault(); // 阻止其他默认行为
+                    e.preventDefault(); 
                     saveTaskFromModal();
                     return;
                 }
@@ -975,16 +974,16 @@
             document.getElementById(`${viewName}View`).classList.add('active');
         }
 
-        // 1. 修复：统一的视图刷新函数，确保无死角刷新
+        // 1. 核心修复：统一视图刷新，确保无死角刷新
         function refreshViews() {
             saveData();
             renderAll(); // 刷新主界面
             
-            // 1. 修复：只要详情页是打开的，就强制刷新详情页内容
+            // 只要详情页是打开的，就强制刷新详情页内容
             const detailModal = document.getElementById('detailModal');
             if (!detailModal.classList.contains('hidden') && currentGoalId) {
-                renderDetailTaskList(); // 确保右侧列表刷新
-                renderDetailCalendar(); // 确保左侧日历刷新
+                renderDetailTaskList(); // 刷新右侧列表
+                renderDetailCalendar(); // 刷新左侧日历
             }
         }
 
@@ -1679,8 +1678,10 @@
             if (!title) { alert('请输入任务名称'); return; }
             if (!date) { alert('请选择日期'); return; }
             
+            // 立即关闭弹窗
             closeModal('taskModal');
 
+            // 异步处理数据保存和渲染
             setTimeout(() => {
                 if (editingTaskId) {
                     const task = data.subtasks.find(s => s.id === editingTaskId);
