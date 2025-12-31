@@ -186,10 +186,10 @@
             font-size: 1.1em;
         }
 
-        /* 修改点 2 & 3：红色圆圈样式 (具体目标视图 & 详情页) */
+        /* 红色圆圈样式 (具体目标视图 & 详情页) */
         .date-circle-red {
-            border: 2px solid #ef4444; /* 红色边框 */
-            color: #ef4444;            /* 红色文字 */
+            border: 2px solid #ef4444; 
+            color: #ef4444;            
             border-radius: 50%;
             width: 28px; height: 28px; 
             display: flex; 
@@ -372,7 +372,7 @@
             z-index: 60 !important;
         }
 
-        /* 修改点 4：颜色选择器样式 (统一为40px圆角正方形) */
+        /* 颜色选择器样式 (统一为40px圆角正方形) */
         .color-input-square {
             width: 40px; 
             height: 40px;
@@ -485,7 +485,7 @@
                             <select id="ddlFilterSelect" onchange="renderMiniCalendar()" class="text-xs bg-white border border-gray-200 rounded-lg px-2 py-1 outline-none text-gray-600 cursor-pointer hover:border-indigo-400">
                                 <option value="all">全部目标</option>
                             </select>
-                            </div>
+                        </div>
                     </div>
                     <div id="miniCalendar" class="calendar-grid"></div>
                 </div>
@@ -732,6 +732,22 @@
                     <div class="flex gap-2" id="customSchemesContainer">
                         </div>
                 </div>
+            </div>
+
+            <div class="space-y-3 mb-4 pb-4 border-b border-gray-100">
+                <label class="block text-sm font-bold mb-1.5 text-gray-700">
+                    <i class="fa-solid fa-database mr-2"></i>数据备份与恢复
+                </label>
+                <div class="flex gap-3">
+                    <button onclick="exportData()" class="flex-1 py-2 border border-gray-200 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-50 transition">
+                        <i class="fa-solid fa-download mr-1"></i>导出数据
+                    </button>
+                    <button onclick="triggerImport()" class="flex-1 py-2 border border-gray-200 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-50 transition">
+                        <i class="fa-solid fa-upload mr-1"></i>导入备份
+                    </button>
+                    <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="importData(this)">
+                </div>
+                <p class="text-xs text-gray-400">建议定期导出备份，防止更换浏览器或清除缓存导致数据丢失。</p>
             </div>
 
             <div class="space-y-1 mb-4 pb-4 border-b border-gray-100">
@@ -1003,7 +1019,6 @@
                         if (diff <= 365) html += `<div class="countdown-badge-classic ${badgeClass}">${diff}天</div>`;
                     }
                     
-                    // 修改点 2：具体目标视图截止日，红色圆圈，无文字
                     if (isDDL) {
                         html = `<span class="date-circle-red z-10">${loop.getDate()}</span>`;
                     }
@@ -1224,7 +1239,6 @@
                 let html = '';
                 let dateHtml = `<span class="font-bold text-gray-500">${loop.getDate()}</span>`;
                 if (loop <= parseDateStr(goal.ddl) && loop >= parseDateStr(getTodayStr()) && !isDDL) {
-                    // 修改点 3：延长到365天
                     if (diff <= 365) {
                         let badgeClass = 'badge-normal';
                         if (diff <= 3) badgeClass = 'badge-urgent';
@@ -1233,7 +1247,6 @@
                     }
                 }
                 
-                // 修改点 3：详情页日历，截止日显示红色圆圈，无文字
                 if (isDDL) {
                     dateHtml = `<span class="date-circle-red">${loop.getDate()}</span>`;
                 }
@@ -1756,6 +1769,61 @@
                 e.preventDefault(); 
                 document.getElementById('appTitle').blur(); 
             }
+        }
+
+        // 新增：导出数据功能
+        function exportData() {
+            const dataStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const date = new Date().toISOString().slice(0, 10);
+            a.download = `MyPlanner_Backup_${date}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // 新增：触发导入
+        function triggerImport() {
+            document.getElementById('importFileInput').click();
+        }
+
+        // 新增：执行导入逻辑
+        function importData(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (!importedData.goals || !importedData.subtasks) {
+                        alert('文件格式错误：这不是 My Planner 的备份文件。');
+                        return;
+                    }
+                    
+                    if (confirm('导入将覆盖当前的全部数据，确定要继续吗？')) {
+                        data = importedData;
+                        // 兼容性检查
+                        if (!data.settings) data.settings = {};
+                        if (!data.settings.taskPresets) data.settings.taskPresets = ['#558B2F', '#1976D2', '#F57C00', '#C2185B', '#7B1FA2'];
+                        if (!data.settings.customSchemes) data.settings.customSchemes = [null, null, null];
+                        
+                        saveData();
+                        init(); 
+                        alert('数据恢复成功！');
+                        closeModal('settingsModal');
+                    }
+                } catch (err) {
+                    alert('文件无法读取，可能已损坏。');
+                    console.error(err);
+                }
+                input.value = '';
+            };
+            reader.readAsText(file);
         }
 
         init();
