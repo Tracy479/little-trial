@@ -2,512 +2,424 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Planner</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Serif+SC:wght@500;700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+
     <style>
         :root {
-            /* 2. 还原：您的专属深苔绿主题 */
-            --theme-color: #4c6c02;
-            --theme-light: rgba(76, 108, 2, 0.1);
-            --glass-opacity: 0.95;
-            --img-opacity: 0.5;
+            /* === 配色方案 (Light Academia & Notion) === */
+            --bg-color: #F9F7F3;       /* 暖米白背景 */
+            --card-bg: #FFFFFF;        /* 纯白卡片 */
+            
+            /* 主题色：复古陶土棕 (默认) */
+            --theme-color: #8D7B68;    
+            --theme-light: rgba(141, 123, 104, 0.15);
+            --theme-hover: rgba(141, 123, 104, 0.08);
+
+            /* 文字颜色 */
+            --text-main: #37352F;      /* Notion Black */
+            --text-muted: #9B9A97;     /* Muted Gray */
+            
+            /* 边框与分割 */
+            --border-color: #E6E0D9;
+            --shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.03);
+
+            /* 功能色 */
+            --color-success: #448361; /* 森林绿 */
+            --color-danger: #D44C47;  /* 复古红 */
+
+            /* 兼容变量 */
+            --glass-opacity: 1; 
+            --img-opacity: 1;
             --bg-image: none;
-            /* 2. 还原：您的专属莫兰迪浅绿灰背景 */
-            --bg-color: #f3f6f3;
         }
         
         body {
             background-color: var(--bg-color);
-            font-family: system-ui, -apple-system, sans-serif;
+            color: var(--text-main);
+            font-family: 'Inter', "PingFang SC", "Microsoft YaHei", sans-serif;
             margin: 0;
             overflow-x: hidden;
             overflow-y: auto;
             min-height: 100vh;
             transition: background-color 0.3s ease;
         }
-        
-        #bg-layer {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: var(--bg-image); background-size: cover; background-position: center;
-            opacity: var(--img-opacity); z-index: -1; pointer-events: none;
-            transition: opacity 0.3s ease;
+
+        /* 标题字体 */
+        h1, h2, h3, .serif-font {
+            font-family: 'Noto Serif SC', serif;
         }
 
-        /* 玻璃面板 */
+        /* === 顶部样式 === */
+        header.glass-panel {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            margin-top: 20px !important;
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: flex-end !important;
+            gap: 20px;
+        }
+
+        #appTitle {
+            font-size: 2.2rem;
+            color: var(--text-main);
+            border-bottom: none !important;
+            line-height: 1.2;
+        }
+        #headerDate {
+            color: var(--text-muted);
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 500;
+        }
+
+        /* === 导航栏 === */
+        .nav-switch {
+            background: transparent !important;
+            padding: 0;
+            border-radius: 0;
+            gap: 24px;
+            backdrop-filter: none;
+            border-bottom: 1px solid var(--border-color);
+            width: 100%;
+            padding-bottom: 0px;
+        }
+        .nav-btn {
+            width: auto;
+            height: 36px;
+            background: transparent !important;
+            color: var(--text-muted);
+            border-radius: 0;
+            box-shadow: none !important;
+            font-size: 15px;
+            font-family: 'Noto Serif SC', serif;
+            position: relative;
+            padding: 0 4px;
+        }
+        .nav-btn:hover:not(.active) {
+            color: var(--theme-color);
+            background: transparent !important;
+        }
+        .nav-btn.active {
+            color: var(--text-main);
+            background: transparent !important;
+            font-weight: 700;
+        }
+        .nav-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: var(--text-main);
+        }
+
+        .view-container { display: none; animation: fadeIn 0.3s ease-out; }
+        .view-container.active { display: block; }
+
+        /* 布局 */
+        #calendarView { height: calc(100vh - 180px); min-height: 500px; }
+        #dashboardView { display: none; }
+        #dashboardView.active {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 24px;
+            height: calc(100vh - 180px);
+            min-height: 500px;
+        }
+        @media (max-aspect-ratio: 1/1) {
+            #dashboardView.active { grid-template-columns: 1fr; height: auto; }
+            .dashboard-col { height: 500px; }
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .theme-text { color: var(--theme-color) !important; }
+        .theme-bg { background-color: var(--theme-color) !important; }
+        
+        .theme-tag {
+            background-color: var(--theme-light);
+            color: var(--theme-color);
+            border: none;
+            border-radius: 4px; 
+            font-size: 11px; 
+            padding: 2px 8px; 
+            font-weight: bold;
+            display: inline-block; 
+            transition: all 0.3s;
+        }
+
+        /* 滚动条 */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { 
+            background: #D3D1CB;
+            border-radius: 3px; 
+            transition: background 0.3s;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #A0A0A0; }
+
         .glass-panel {
-            background: rgba(255, 255, 255, var(--glass-opacity));
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
+            background: var(--card-bg) !important;
+            backdrop-filter: none !important;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-card);
             transition: all 0.3s ease;
             overflow: hidden;
             display: flex;
             flex-direction: column;
             height: 100%;
+            border-radius: 4px !important; 
         }
-        
-        .glass-panel.is-collapsed {
-            height: auto !important;
-            flex: 0 0 auto !important;
-            min-height: 0 !important;
-        }
-
-        .view-container {
-            display: none;
-            animation: fadeIn 0.3s ease-out;
-        }
-        .view-container.active {
-            display: block;
-        }
-
-        #calendarView {
-            height: calc(100vh - 140px);
-            min-height: 500px;
-        }
-
-        #dashboardView {
-            display: none;
-        }
-        #dashboardView.active {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 16px;
-            height: calc(100vh - 140px);
-            min-height: 500px;
-        }
-
-        @media (max-aspect-ratio: 1/1) {
-            #dashboardView.active {
-                grid-template-columns: 1fr;
-                height: auto;
-            }
-            .dashboard-col {
-                height: 500px;
-            }
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .theme-text { color: var(--theme-color); transition: color 0.3s; }
-        .theme-bg { background-color: var(--theme-color); transition: background-color 0.3s; }
-        
-        .theme-tag {
-            background-color: var(--theme-light);
-            color: var(--theme-color);
-            border-radius: 4px; font-size: 11px; padding: 2px 6px; font-weight: bold;
-            display: inline-block; transition: all 0.3s;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { 
-            background: rgba(0,0,0,0.2); 
-            border-radius: 3px; 
-            transition: background 0.3s;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
 
         .task-checkbox {
             position: relative;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s ease;
             background: white;
+            border-radius: 3px !important;
+            border: 1px solid #C0C0C0 !important;
         }
-        .task-checkbox:hover { 
-            border-color: var(--theme-color); 
-            transform: scale(1.1);
-        }
+        .task-checkbox:hover { background-color: #F0F0F0; }
         .task-checkbox.checked {
-            background-color: var(--theme-color);
-            border-color: var(--theme-color);
+            background-color: var(--theme-color) !important;
+            border-color: var(--theme-color) !important;
         }
-        .task-checkbox.checked i {
-            opacity: 1 !important;
-            color: white;
-        }
+        .task-checkbox.checked i { opacity: 1 !important; color: white; font-size: 10px; }
 
-        /* 批量选择复选框 */
         .bulk-checkbox {
-            width: 20px; height: 20px;
-            border: 2px solid #d1d5db;
-            border-radius: 6px;
+            width: 18px; height: 18px;
+            border: 1px solid #C0C0C0;
+            border-radius: 3px;
             display: flex; align-items: center; justify-content: center;
-            transition: all 0.1s; 
-            cursor: pointer;
-            background: white;
+            transition: all 0.1s; cursor: pointer; background: white;
         }
-        .bulk-checkbox.selected {
-            background-color: #ef4444;
-            border-color: #ef4444;
-        }
-        .bulk-checkbox i {
-            color: white; font-size: 12px; opacity: 0;
-        }
+        .bulk-checkbox.selected { background-color: var(--color-danger); border-color: var(--color-danger); }
         .bulk-checkbox.selected i { opacity: 1; }
+        .bulk-checkbox i { color: white; font-size: 10px; opacity: 0; }
 
-        .panel-wrapper {
-            flex: 1;
-            transition: flex-grow 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
-            overflow: hidden;
-            display: flex; 
-            flex-direction: column;
-        }
-        .panel-wrapper.collapsed {
-            flex: 0 0 0; 
-            opacity: 0; 
-            padding: 0 !important;
-        }
-        .panel-inner { 
-            flex: 1; 
-            overflow: hidden; 
-            display: flex; 
-            flex-direction: column; 
-        }
+        .panel-wrapper { flex: 1; transition: flex-grow 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease; overflow: hidden; display: flex; flex-direction: column; }
+        .panel-wrapper.collapsed { flex: 0 0 0; opacity: 0; padding: 0 !important; }
+        .panel-inner { flex: 1; overflow: hidden; display: flex; flex-direction: column; background: transparent !important; }
 
+        /* === 日历 === */
         .calendar-grid { 
-            display: grid; 
+            display: grid;
             grid-template-columns: repeat(7, minmax(0, 1fr)); 
-            gap: 8px; 
-            padding-bottom: 10px; 
+            border-top: 1px solid var(--border-color);
+            border-left: 1px solid var(--border-color);
         }
         .calendar-day {
-            min-height: 120px; 
-            border-radius: 8px; 
+            min-height: 100px;
             padding: 8px; 
             cursor: pointer;
-            border: 1px solid transparent; 
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
             background: white; 
             display: flex; 
             flex-direction: column; 
-            align-items: center;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+            align-items: flex-start;
+            transition: background 0.2s; 
             position: relative; 
-            font-size: 15px;
-            overflow: hidden; 
+            font-size: 14px;
+            overflow: hidden;
+            border-radius: 0;
         }
-        .calendar-day:hover { 
-            z-index: 10; 
-            transform: translateY(-2px) scale(1.01); 
-            box-shadow: 0 8px 16px rgba(0,0,0,0.12);
-            overflow: visible; 
-        }
+        .calendar-day:hover { background-color: #FAFAFA; z-index: 10; overflow: visible; }
         
         .cal-today { 
-            border: 2px solid var(--theme-color); 
+            background-color: #F7F6F3;
+            border: none;
+            box-shadow: inset 0 0 0 1px var(--border-color);
+        }
+        .cal-today span {
+            color: var(--theme-color);
             font-weight: bold;
-            box-shadow: 0 0 0 3px var(--theme-light);
+            border-bottom: 2px solid var(--theme-color);
         }
         
-        .date-highlight-theme {
-            color: var(--theme-color);
-            font-weight: 800;
-            font-size: 1.1em;
-        }
+        .date-highlight-theme { color: var(--theme-color); font-weight: 800; font-size: 1.1em; }
 
-        /* 红色圆圈样式 (具体目标日历截止日) */
         .date-circle-red {
-            border: 2px solid #ef4444; 
-            color: #ef4444;            
-            border-radius: 50%;
-            width: 28px; height: 28px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
+            color: var(--color-danger);            
             font-weight: bold;
+            border-bottom: 2px solid var(--color-danger);
+            border-radius: 0;
+            display: inline-block;
         }
 
+        /* 修改：日历中的目标标签改为 Notion 风格 (彩色背景+深色字) */
         .cal-goal-tag {
-            font-size: 12px; 
-            color: var(--theme-color); 
-            background: var(--theme-light);
-            margin-top: 6px; 
-            text-align: center;
+            font-size: 11px;
+            color: var(--theme-color); /* 深色主题字 */
+            background: var(--theme-light); /* 浅色主题底 */
+            margin-top: 2px; 
+            text-align: left;
             padding: 2px 6px; 
             border-radius: 4px; 
-            font-weight: bold; 
-            width: 95%;
-            overflow: hidden; 
-            text-overflow: ellipsis; 
-            white-space: nowrap;
+            font-weight: 600; /* 加粗一点 */
+            width: 100%;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
 
+        /* 修改：日历任务标签保持全色块填充 */
         .cal-task-item {
-            background: var(--theme-color); 
-            opacity: 0.8; 
-            color: white; 
+            color: var(--text-main); 
             padding: 2px 6px; 
-            border-radius: 3px; 
+            border-radius: 4px; 
             margin-top: 2px; 
             font-size: 11px; 
-            white-space: nowrap; 
-            overflow: hidden; 
-            text-overflow: ellipsis; 
-            width: 100%;
-            max-width: 100%; 
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            width: 100%; max-width: 100%; 
             transition: all 0.2s;
-            position: relative;
-            text-align: left; 
+            position: relative; text-align: left;
+            border: none; 
         }
-        
-        .cal-task-item.done {
-            opacity: 0.5;
-        }
-        
-        .cal-task-item.done::after {
-            content: '';
-            position: absolute;
-            left: 0;
-            right: 0;
-            top: 50%;
-            height: 1px;
-            background: white;
-            transform: translateY(-50%);
-        }
+        .cal-task-item.done { opacity: 0.5; text-decoration: line-through; }
         
         .countdown-badge-classic {
-            position: absolute; 
-            top: 4px; 
-            right: 4px;
-            font-size: 11px; 
-            font-weight: 800;
-            padding: 2px 6px; 
-            border-radius: 6px;
-            z-index: 5;
+            position: absolute; top: 4px; right: 4px;
+            font-size: 10px; font-weight: 600;
+            padding: 1px 5px; border-radius: 2px; z-index: 5;
         }
-        .badge-urgent { background-color: #fee2e2; color: #ef4444; }
-        .badge-warning { background-color: #ffedd5; color: #ea580c; }
-        .badge-normal { background-color: var(--theme-light); color: var(--theme-color); }
+        .badge-urgent { background-color: #FFDCDD; color: #D44C47; }
+        .badge-warning { background-color: #FFE8CC; color: #D9730D; }
+        .badge-normal { background-color: #E3E2E0; color: #787774; }
 
-        .task-separator { 
-            display: flex; 
-            align-items: center; 
-            margin: 16px 0 8px 0; 
-            font-size: 12px; 
-            color: #9ca3af; 
-            font-weight: bold; 
-        }
-        .task-separator::before, .task-separator::after { 
-            content: ""; flex: 1; height: 1px; background: #e5e7eb; 
-        }
+        .task-separator { display: flex; align-items: center; margin: 16px 0 8px 0; font-size: 12px; color: var(--text-muted); font-weight: 600; font-family: 'Noto Serif SC', serif; }
+        .task-separator::before, .task-separator::after { content: ""; flex: 1; height: 1px; background: #E0E0E0; }
         .task-separator span { margin: 0 10px; }
 
         .fade-in-up { animation: fadeInUp 0.3s ease-out; }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .tooltip { position: relative; }
-        .tooltip::before {
-            content: attr(data-tooltip);
-            position: absolute; bottom: 100%; left: 50%;
-            transform: translateX(-50%) translateY(-5px);
-            padding: 4px 8px; background: rgba(0, 0, 0, 0.8);
-            color: white; font-size: 12px; border-radius: 4px;
-            white-space: nowrap; opacity: 0; pointer-events: none;
-            transition: opacity 0.2s, transform 0.2s; z-index: 100;
-        }
-        .tooltip:hover::before { opacity: 1; transform: translateX(-50%) translateY(-8px); }
-        
-        .hidden-visually { opacity: 0; pointer-events: none; }
-        
         .stat-card {
-            background: linear-gradient(135deg, var(--theme-color) 0%, rgba(79, 70, 229, 0.8) 100%);
-            color: white; padding: 16px; border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        
-        .empty-state {
-            display: flex; flex-direction: column; align-items: center;
-            justify-content: center; padding: 40px 20px; text-align: center; color: #9ca3af;
-        }
-        .empty-state i { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
-
-        .nav-switch {
-            background: rgba(243, 244, 246, var(--glass-opacity));
-            padding: 2px;
-            border-radius: 8px;
-            display: flex;
-            gap: 2px;
-            backdrop-filter: blur(10px);
-        }
-        .nav-btn {
-            width: 72px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 600;
-            color: #6b7280;
-            transition: all 0.2s;
-        }
-        .nav-btn.active {
-            background: rgba(255, 255, 255, var(--glass-opacity));
-            color: var(--theme-color);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .nav-btn:hover:not(.active) {
-            background: rgba(255,255,255,0.5);
-        }
-        
-        .header-btn {
-            background: rgba(255, 255, 255, var(--glass-opacity));
-            backdrop-filter: blur(10px);
-        }
-
-        button {
-            -webkit-tap-highlight-color: transparent;
-            outline: none;
-        }
-        button:focus {
-            outline: none;
-        }
-        
-        .add-btn-theme {
-            border: 1px solid #e5e7eb;
-            transition: all 0.2s;
-        }
-        .add-btn-theme:hover,
-        .add-btn-theme:focus {
-            border-color: var(--theme-color) !important;
-            background-color: var(--theme-light) !important;
-        }
-        
-        .restore-btn-theme:hover,
-        .restore-btn-theme:focus {
-            color: var(--theme-color) !important;
-            border-color: var(--theme-color) !important;
-        }
-        
-        .edit-btn-theme:hover {
-            color: var(--theme-color) !important;
-        }
-
-        .z-60 {
-            z-index: 60 !important;
-        }
-
-        .color-input-square {
-            width: 40px; 
-            height: 40px;
-            padding: 0;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            cursor: pointer;
-            overflow: hidden;
-            display: inline-block;
-            vertical-align: middle;
-        }
-        .color-input-square::-webkit-color-swatch-wrapper {
-            padding: 0; 
-        }
-        .color-input-square::-webkit-color-swatch {
-            border: none;
-            border-radius: 6px;
-        }
-
-        .scheme-slot {
-            width: 40px; 
-            height: 40px; 
-            border: 2px dashed #d1d5db; 
-            border-radius: 8px;
-            cursor: pointer;
-            position: relative;
-            transition: all 0.2s;
-            background-color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .scheme-slot:hover {
-            border-color: var(--theme-color);
-            background-color: #f9fafb;
-        }
-        .scheme-slot.filled {
-            border: 2px solid #e5e7eb;
-            background-image: linear-gradient(135deg, var(--slot-theme) 50%, var(--slot-bg) 50%);
-        }
-        .scheme-clear {
-            position: absolute;
-            top: -6px; right: -6px;
             background: white;
-            border-radius: 50%;
-            width: 16px; height: 16px;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-            font-size: 10px; color: #ef4444;
-            display: none;
+            color: var(--text-main); 
+            padding: 16px; 
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-subtle);
         }
-        .scheme-slot.filled:hover .scheme-clear {
-            display: flex;
+        .stat-card .text-3xl { color: var(--theme-color); font-family: 'Playfair Display', serif; }
+        
+        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; text-align: center; color: #D3D1CB; }
+        .empty-state i { font-size: 32px; margin-bottom: 12px; opacity: 0.8; }
+
+        .header-btn { background: transparent; border: 1px solid transparent; }
+        .header-btn:hover { background: var(--theme-hover); color: var(--theme-color); }
+
+        button { -webkit-tap-highlight-color: transparent; outline: none; }
+        
+        .add-btn-theme { border: 1px solid transparent; color: var(--text-muted); transition: all 0.2s; }
+        .add-btn-theme:hover, .add-btn-theme:focus { background-color: var(--theme-hover) !important; color: var(--theme-color) !important; }
+        
+        .restore-btn-theme:hover, .edit-btn-theme:hover { color: var(--theme-color) !important; }
+
+        .z-60 { z-index: 60 !important; }
+
+        .color-input-square { width: 32px; height: 32px; padding: 0; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; overflow: hidden; display: inline-block; vertical-align: middle; }
+        .scheme-slot { width: 32px; height: 32px; border: 1px dashed #d1d5db; border-radius: 4px; cursor: pointer; position: relative; transition: all 0.2s; background-color: white; display: flex; align-items: center; justify-content: center; }
+
+        .fixed.inset-0 { background-color: rgba(255, 255, 255, 0.6); backdrop-filter: blur(2px); }
+        #goalModal .bg-white, #taskModal .bg-white, #detailModal .bg-white, #statsModal .bg-white, #settingsModal .bg-white {
+            border: 1px solid var(--border-color);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border-radius: 6px;
+        }
+        
+        input[type="text"], input[type="date"], select, textarea {
+            background-color: #F7F7F5 !important;
+            border: 1px solid transparent !important;
+            border-radius: 4px !important;
+            transition: all 0.2s;
+            color: var(--text-main);
+        }
+        input:focus, select:focus, textarea:focus {
+            background-color: white !important;
+            border-color: var(--theme-color) !important;
+            box-shadow: 0 0 0 2px var(--theme-light);
         }
 
+        .hover\:bg-gray-100:hover { background-color: #F7F6F3 !important; }
+        
+        .task-item-card {
+            background: white !important;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+            border-radius: 4px !important;
+            margin-bottom: 8px;
+        }
+        .task-item-card:hover {
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border-color: #D0D0D0;
+        }
+        
+        /* 进度条动画 */
+        .progress-bar-transition { transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
-    <script>
-    var _hmt = _hmt || [];
-    (function() {
-      var hm = document.createElement("script");
-      hm.src = "https://hm.baidu.com/hm.js?0cc83bc5119aa529ab3d4664059fbb4a";
-      var s = document.getElementsByTagName("script")[0]; 
-      s.parentNode.insertBefore(hm, s);
-    })();
-    </script>
 </head>
 <body>
 
     <div id="bg-layer"></div>
 
-    <header class="max-w-[95%] mx-auto mb-4 mt-4 glass-panel px-6 py-3 rounded-2xl shadow-sm shrink-0" style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;">
-        <div class="flex items-center gap-4">
-            <div class="bg-white/50 p-2.5 rounded-xl theme-text border border-white/60 shadow-sm">
-                <i class="fa-solid fa-calendar-days text-xl"></i>
-            </div>
-            <div>
+    <header class="max-w-[95%] mx-auto mb-4 glass-panel px-6 py-3 shrink-0 relative z-20">
+        <div class="flex flex-col gap-1 flex-1">
+             <div class="flex items-baseline gap-4">
                 <h1 id="appTitle" 
                     contenteditable="true" 
                     spellcheck="false"
-                    class="text-2xl font-bold theme-text tracking-tight outline-none border-b-2 border-transparent focus:border-current cursor-text transition-all min-w-[100px]" 
-                    style="font-family: Calibri, sans-serif;"
+                    class="font-bold tracking-tight outline-none cursor-text transition-all min-w-[100px]" 
                     onblur="saveAppTitle()"
                     onkeydown="handleTitleKeydown(event)">
-                    My Planner
+                    我的计划
                 </h1>
-                <p class="text-gray-500 font-medium text-sm mt-0.5" id="headerDate">Loading...</p>
+                <p class="text-sm mt-0.5" id="headerDate">加载中...</p>
+            </div>
+            
+            <div class="nav-switch mt-4 flex">
+                <button onclick="switchView('calendar')" class="nav-btn active" id="btn-calendar">日历</button>
+                <button onclick="switchView('dashboard')" class="nav-btn" id="btn-dashboard">看板</button>
             </div>
         </div>
 
-        <div class="nav-switch">
-            <button onclick="switchView('calendar')" class="nav-btn active" id="btn-calendar">
-                <i class="fa-solid fa-calendar mr-2"></i>日历
+        <div class="flex gap-2 justify-end items-center self-end mb-1">
+            <button onclick="openStats()" class="header-btn flex items-center justify-center w-8 h-8 rounded text-gray-400 transition" title="数据统计">
+                <i class="fa-solid fa-chart-bar"></i>
             </button>
-            <button onclick="switchView('dashboard')" class="nav-btn" id="btn-dashboard">
-                <i class="fa-solid fa-columns mr-2"></i>看板
-            </button>
-        </div>
-
-        <div class="flex gap-2 justify-end items-center">
-            <button onclick="openStats()" class="header-btn flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600 transition shadow-sm">
-                <i class="fa-solid fa-chart-bar theme-text"></i>
-            </button>
-            <button onclick="openSettings()" class="header-btn flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600 transition shadow-sm">
-                <i class="fa-solid fa-palette theme-text"></i>
+            <button onclick="openSettings()" class="header-btn flex items-center justify-center w-8 h-8 rounded text-gray-400 transition" title="设置">
+                <i class="fa-solid fa-cog"></i>
             </button>
         </div>
     </header>
 
-    <main class="max-w-[95%] mx-auto pb-4">
+    <main class="max-w-[95%] mx-auto pb-8 relative z-20">
         
         <div id="calendarView" class="view-container active">
-            <section id="ddlSection" class="glass-panel rounded-2xl shadow-lg w-full h-full">
-                <div class="p-4 bg-white/30 overflow-y-auto custom-scrollbar" style="height: 100%;">
-                    <div class="flex justify-between items-center mb-3 px-1 shrink-0">
-                        <span class="text-lg font-bold text-gray-700" id="miniCalTitle"></span>
-                        <div class="flex gap-3 items-center">
-                            <select id="ddlFilterSelect" onchange="renderMiniCalendar()" class="text-xs bg-white border border-gray-200 rounded-lg px-2 py-1 outline-none text-gray-600 cursor-pointer hover:border-indigo-400">
+            <section id="ddlSection" class="glass-panel rounded-lg w-full h-full">
+                <div class="p-0 bg-white overflow-y-auto custom-scrollbar" style="height: 100%;">
+                    <div class="flex justify-between items-center p-4 sticky top-0 bg-white z-20 border-b border-[#E6E0D9]">
+                        <span class="text-xl font-bold serif-font text-gray-800" id="miniCalTitle"></span>
+                        
+                        <div class="flex gap-4 items-center">
+                            <div id="todayProgress" class="flex items-center gap-2 text-xs opacity-0 transition-opacity duration-300">
+                                <span class="text-gray-500 font-medium" id="progressText">今日: 0%</span>
+                                <div class="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                    <div id="progressBar" class="h-full theme-bg progress-bar-transition" style="width: 0%"></div>
+                                </div>
+                                <span id="celebration" class="hidden text-sm">🎉</span>
+                            </div>
+
+                            <select id="ddlFilterSelect" onchange="renderMiniCalendar()" class="text-xs bg-[#F7F7F5] border-none rounded px-2 py-1 outline-none text-gray-600 cursor-pointer">
                                 <option value="all">全部目标</option>
                             </select>
                         </div>
@@ -518,56 +430,52 @@
         </div>
 
         <div id="dashboardView" class="view-container">
-            <section id="goalsSection" class="glass-panel rounded-2xl shadow-lg dashboard-col">
-                <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 cursor-pointer hover:bg-gray-100 transition select-none shrink-0" onclick="toggleSection('goalsWrapper', 'goalsChevron', 'addGoalBtn')">
-                    <h2 class="text-lg font-bold theme-text pl-2">
-                        <i class="fa-solid fa-bullseye mr-2"></i>目标
-                    </h2>
+            <section id="goalsSection" class="glass-panel rounded-lg dashboard-col">
+                <div class="p-3 border-b border-[#E6E0D9] flex justify-between items-center cursor-pointer hover:bg-[#F7F6F3] transition select-none shrink-0" onclick="toggleSection('goalsWrapper', 'goalsChevron', 'addGoalBtn')">
+                    <h2 class="text-lg font-bold text-[#37352F] pl-1 serif-font">目标</h2>
                     <div class="flex gap-3 items-center">
-                        <button id="addGoalBtn" onclick="event.stopPropagation(); openAddGoalModal()" class="add-btn-theme text-xs bg-white px-2 py-1 rounded-full shadow-sm text-gray-600 flex items-center gap-1">
+                        <button id="addGoalBtn" onclick="event.stopPropagation(); openAddGoalModal()" class="add-btn-theme text-xs px-2 py-1 rounded flex items-center gap-1">
                             <i class="fa-solid fa-plus"></i>
                         </button>
-                        <i class="fa-solid fa-chevron-down text-gray-400 transition-transform duration-300" id="goalsChevron"></i>
+                        <i class="fa-solid fa-chevron-down text-gray-300 transition-transform duration-300" id="goalsChevron"></i>
                     </div>
                 </div>
                 <div id="goalsWrapper" class="panel-wrapper">
-                    <div class="panel-inner p-4 space-y-3 bg-white/30 overflow-y-auto custom-scrollbar" id="goalsContent"></div>
+                    <div class="panel-inner p-4 space-y-3 bg-white overflow-y-auto custom-scrollbar" id="goalsContent"></div>
                 </div>
             </section>
 
-            <section id="todoSection" class="glass-panel rounded-2xl shadow-lg dashboard-col">
-                <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 cursor-pointer hover:bg-gray-100 transition select-none shrink-0" onclick="toggleSection('stepsWrapper', 'stepsChevron', 'addTaskBtn')">
+            <section id="todoSection" class="glass-panel rounded-lg dashboard-col">
+                <div class="p-3 border-b border-[#E6E0D9] flex justify-between items-center cursor-pointer hover:bg-[#F7F6F3] transition select-none shrink-0" onclick="toggleSection('stepsWrapper', 'stepsChevron', 'addTaskBtn')">
                     <div class="flex items-center gap-2">
-                        <h2 class="text-lg font-bold theme-text pl-2">
-                            <i class="fa-solid fa-list-check mr-2"></i>代办
-                        </h2>
-                        <span class="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full" id="taskCountBadge">0</span>
+                        <h2 class="text-lg font-bold text-[#37352F] pl-1 serif-font">待办</h2>
+                        <span class="text-xs text-gray-400 font-normal" id="taskCountBadge">0</span>
                     </div>
                     <div class="flex gap-3 items-center">
-                        <button id="bulkSelectBtn" onclick="event.stopPropagation(); toggleSelectionMode()" class="add-btn-theme text-xs bg-white px-2 py-1 rounded-full shadow-sm text-gray-600 flex items-center gap-1" title="批量管理">
+                        <button id="bulkSelectBtn" onclick="event.stopPropagation(); toggleSelectionMode()" class="add-btn-theme text-xs px-2 py-1 rounded flex items-center gap-1" title="批量管理">
                             <i class="fa-solid fa-list-check"></i>
                         </button>
-                        <button id="addTaskBtn" onclick="event.stopPropagation(); openAddTaskModal()" class="add-btn-theme text-xs bg-white px-2 py-1 rounded-full shadow-sm text-gray-600 flex items-center gap-1">
+                        <button id="addTaskBtn" onclick="event.stopPropagation(); openAddTaskModal()" class="add-btn-theme text-xs px-2 py-1 rounded flex items-center gap-1">
                             <i class="fa-solid fa-plus"></i>
                         </button>
-                        <i class="fa-solid fa-chevron-down text-gray-400 transition-transform duration-300" id="stepsChevron"></i>
+                        <i class="fa-solid fa-chevron-down text-gray-300 transition-transform duration-300" id="stepsChevron"></i>
                     </div>
                 </div>
                 <div id="stepsWrapper" class="panel-wrapper">
-                    <div class="panel-inner flex flex-col h-full bg-white/30">
-                        <div id="stepsList" class="space-y-3 p-4 flex-1 overflow-y-auto custom-scrollbar"></div>
+                    <div class="panel-inner flex flex-col h-full bg-white">
+                        <div id="stepsList" class="space-y-2 p-4 flex-1 overflow-y-auto custom-scrollbar"></div>
                         
                         <div id="bulkDeleteBar" class="p-3 pt-2 border-t-0 bg-transparent shrink-0 hidden">
-                            <button onclick="deleteSelectedTasks()" class="w-full bg-red-500 text-white py-2 rounded-lg font-bold hover:bg-red-600 transition shadow-sm text-sm">
+                            <button onclick="deleteSelectedTasks()" class="w-full bg-[#D44C47] text-white py-2 rounded font-bold hover:opacity-90 transition shadow-sm text-sm">
                                 <i class="fa-solid fa-trash mr-2"></i>删除选中任务
                             </button>
                         </div>
 
-                        <div id="quickAddBar" class="p-3 pt-2 border-t-0 bg-transparent shrink-0">
-                            <div class="flex gap-2 shadow-sm rounded-lg overflow-hidden border border-gray-200 bg-white" style="height: 36px;">
-                                <input type="text" id="quickIndependentInput" placeholder="快速添加今日任务..." class="flex-1 px-3 py-1 outline-none text-gray-700 text-sm" onkeydown="if(event.key==='Enter')addQuickTask()">
-                                <button onclick="addQuickTask()" class="theme-bg text-white px-3 flex items-center justify-center hover:opacity-90 transition shrink-0" title="添加" style="width: 36px;">
-                                    <i class="fa-solid fa-plus text-sm"></i>
+                        <div id="quickAddBar" class="p-3 pt-2 border-t border-[#E6E0D9] bg-white shrink-0">
+                            <div class="flex gap-2 items-center">
+                                <input type="text" id="quickIndependentInput" placeholder="+ 快速添加今日任务..." class="flex-1 px-0 py-1 outline-none text-gray-700 text-sm bg-transparent !important border-none !important focus:ring-0 !important shadow-none !important" onkeydown="if(event.key==='Enter')addQuickTask()">
+                                <button onclick="addQuickTask()" class="text-gray-400 hover:text-[var(--theme-color)] px-2 transition shrink-0">
+                                    <i class="fa-solid fa-arrow-turn-down text-xs"></i>
                                 </button>
                             </div>
                         </div>
@@ -575,15 +483,13 @@
                 </div>
             </section>
 
-            <section id="completedSection" class="glass-panel rounded-2xl shadow-lg dashboard-col">
-                <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 cursor-pointer hover:bg-gray-100 transition select-none shrink-0" onclick="toggleSection('completedWrapper', 'completedChevron')">
-                    <h2 class="text-lg font-bold theme-text pl-2">
-                        <i class="fa-solid fa-check-circle mr-2"></i>已完成
-                    </h2>
-                    <i class="fa-solid fa-chevron-down text-gray-400 transition-transform duration-300" id="completedChevron"></i>
+            <section id="completedSection" class="glass-panel rounded-lg dashboard-col">
+                <div class="p-3 border-b border-[#E6E0D9] flex justify-between items-center cursor-pointer hover:bg-[#F7F6F3] transition select-none shrink-0" onclick="toggleSection('completedWrapper', 'completedChevron')">
+                    <h2 class="text-lg font-bold text-[#37352F] pl-1 serif-font">已完成</h2>
+                    <i class="fa-solid fa-chevron-down text-gray-300 transition-transform duration-300" id="completedChevron"></i>
                 </div>
                 <div id="completedWrapper" class="panel-wrapper">
-                    <div class="panel-inner p-4 bg-white/30 overflow-y-auto custom-scrollbar" id="completedContent">
+                    <div class="panel-inner p-4 bg-white overflow-y-auto custom-scrollbar" id="completedContent">
                         <div id="completedList" class="grid grid-cols-1 gap-2"></div>
                     </div>
                 </div>
@@ -591,243 +497,192 @@
         </div>
     </main>
 
-    <div id="goalModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 fade-in-up">
-            <h3 class="text-xl font-bold mb-4 theme-text" id="goalModalTitle">
-                <i class="fa-solid fa-flag mr-2"></i>新建目标
-            </h3>
-            <label class="block text-sm font-bold text-gray-700 mb-1">目标名称</label>
-            <input type="text" id="goalTitle" class="w-full mb-4 p-3 border rounded-lg outline-none focus:ring-2 focus:ring-[var(--theme-color)] bg-gray-50" placeholder="输入目标名称..." onkeydown="if(event.key==='Enter')saveGoal()">
+    <div id="goalModal" class="fixed inset-0 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg w-full max-w-md p-6 fade-in-up">
+            <h3 class="text-xl font-bold mb-4 serif-font text-[#37352F]" id="goalModalTitle">新建目标</h3>
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">名称</label>
+            <input type="text" id="goalTitle" class="w-full mb-4 p-2 border rounded outline-none" placeholder="想达成什么目标？" onkeydown="if(event.key==='Enter')saveGoal()">
             <div class="flex gap-4 mb-6">
                 <div class="flex-1">
-                    <label class="block text-sm font-bold text-gray-700 mb-1">截止日期</label>
-                    <input type="date" id="goalDDL" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-[var(--theme-color)] bg-gray-50" style="height: 50px;">
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">截止日期</label>
+                    <input type="date" id="goalDDL" class="w-full p-2 border rounded outline-none">
                 </div>
                 <div class="flex-1">
-                    <label class="block text-sm font-bold text-gray-700 mb-1">分类</label>
-                    <select id="goalCategorySelect" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-[var(--theme-color)] bg-gray-50" style="height: 50px;"></select>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">分类</label>
+                    <select id="goalCategorySelect" class="w-full p-2 border rounded outline-none"></select>
                 </div>
             </div>
-            <div class="flex justify-end gap-3 pt-4 border-t">
-                <button onclick="closeModal('goalModal')" class="px-5 py-2 text-gray-500 hover:bg-gray-100 rounded-lg font-medium transition">
-                    取消
-                </button>
-                <button onclick="saveGoal()" class="px-5 py-2 theme-bg text-white rounded-lg hover:opacity-90 font-medium shadow-md transition">
-                    <i class="fa-solid fa-save mr-2"></i>保存
-                </button>
+            <div class="flex justify-end gap-3 pt-4 border-t border-[#E6E0D9]">
+                <button onclick="closeModal('goalModal')" class="px-4 py-1.5 text-gray-500 hover:bg-gray-100 rounded transition text-sm">取消</button>
+                <button onclick="saveGoal()" class="px-4 py-1.5 theme-bg text-white rounded hover:opacity-90 font-medium shadow-sm transition text-sm">保存目标</button>
             </div>
         </div>
     </div>
 
-    <div id="taskModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-60 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 fade-in-up">
-            <h3 id="taskModalTitle" class="text-xl font-bold mb-4 theme-text">
-                <i class="fa-solid fa-tasks mr-2"></i>新建任务
-            </h3>
-            <label class="block text-sm font-bold text-gray-700 mb-1">任务名称</label>
-            <input type="text" id="taskTitle" class="w-full mb-4 p-3 border rounded-lg outline-none focus:ring-2 focus:ring-[var(--theme-color)] bg-gray-50" placeholder="输入任务名称...">
+    <div id="taskModal" class="fixed inset-0 hidden flex items-center justify-center z-60 p-4">
+        <div class="bg-white rounded-lg w-full max-w-md p-6 fade-in-up">
+            <h3 id="taskModalTitle" class="text-xl font-bold mb-4 serif-font text-[#37352F]">新建任务</h3>
+            <input type="text" id="taskTitle" class="w-full mb-4 p-2 border-b border-0 rounded-none focus:border-[var(--theme-color)] bg-transparent !important text-lg font-medium placeholder-gray-300" placeholder="输入任务名称...">
             
             <div class="flex gap-4 mb-2">
                 <div class="flex-1">
-                    <label class="block text-sm font-bold text-gray-700 mb-1">日期 / 开始日期</label>
-                    <input type="date" id="taskDate" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-[var(--theme-color)] bg-gray-50" style="height: 50px;">
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">日期</label>
+                    <input type="date" id="taskDate" class="w-full p-2 border rounded outline-none">
                 </div>
                 <div class="flex-1">
-                    <label class="block text-sm font-bold text-gray-700 mb-1">关联目标</label>
-                    <select id="taskGoalSelectModal" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-[var(--theme-color)] bg-gray-50" style="height: 50px;">
-                        <option value="">独立任务</option>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">关联目标</label>
+                    <select id="taskGoalSelectModal" class="w-full p-2 border rounded outline-none">
+                        <option value="">无目标 (独立任务)</option>
                     </select>
                 </div>
             </div>
 
-            <div id="taskRepeatSection" class="mb-4">
+            <div id="taskRepeatSection" class="mb-4 mt-4 p-3 bg-[#F7F7F5] rounded">
                 <div class="flex items-center gap-2 mb-2">
                     <input type="checkbox" id="taskRepeatToggle" onchange="toggleRepeatMode()" class="w-4 h-4 text-[var(--theme-color)] border-gray-300 rounded focus:ring-[var(--theme-color)]">
                     <label for="taskRepeatToggle" class="text-sm font-bold text-gray-700 select-none">每天重复</label>
                 </div>
-                
-                <div id="repeatEndDateContainer" class="hidden fade-in-up">
-                    <label class="block text-sm font-bold text-gray-700 mb-1">结束日期 (重复至)</label>
-                    <input type="date" id="taskEndDate" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-[var(--theme-color)] bg-gray-50" style="height: 50px;">
+                <div id="repeatEndDateContainer" class="hidden fade-in-up mt-2">
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">直到 (结束日期)</label>
+                    <input type="date" id="taskEndDate" class="w-full p-2 border rounded outline-none">
                 </div>
             </div>
 
             <div class="mb-4">
-                <label class="block text-sm font-bold text-gray-700 mb-2">任务颜色</label>
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">颜色标记</label>
                 <div id="taskPresetsList" class="flex gap-2 items-center flex-wrap"></div>
-                <div class="flex items-center gap-2 mt-2">
-                    <span id="taskColorPreview" class="text-xs text-gray-400 italic">您可以在“主题设置”中修改这5个常用色</span>
-                </div>
                 <input type="hidden" id="taskColor" value="">
+                <span id="taskColorPreview" class="hidden"></span>
             </div>
             
-            <div class="flex justify-between pt-4 border-t items-center">
-                <button id="btnDeleteTask" onclick="deleteTaskFromModal()" class="hidden px-4 py-2 bg-red-50 text-red-500 hover:bg-red-100 rounded-lg font-bold text-sm transition">
-                    <i class="fa-solid fa-trash mr-1"></i>删除
-                </button>
+            <div class="flex justify-between pt-4 border-t border-[#E6E0D9] items-center">
+                <button id="btnDeleteTask" onclick="deleteTaskFromModal()" class="hidden px-3 py-1.5 text-red-500 hover:bg-red-50 rounded text-sm transition">删除</button>
                 <div class="flex gap-3 ml-auto">
-                    <button onclick="closeModal('taskModal')" class="px-5 py-2 text-gray-500 hover:bg-gray-100 rounded-lg font-medium transition">
-                        取消
-                    </button>
-                    <button onclick="saveTaskFromModal()" class="px-5 py-2 theme-bg text-white rounded-lg hover:opacity-90 font-medium shadow-md transition">
-                        <i class="fa-solid fa-save mr-2"></i>保存
-                    </button>
+                    <button onclick="closeModal('taskModal')" class="px-4 py-1.5 text-gray-500 hover:bg-gray-100 rounded transition text-sm">取消</button>
+                    <button onclick="saveTaskFromModal()" class="px-4 py-1.5 theme-bg text-white rounded hover:opacity-90 font-medium shadow-sm transition text-sm">保存</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="detailModal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden fade-in-up">
-            <div class="p-5 border-b flex justify-between items-center bg-gray-50">
-                <h2 id="detailTitle" class="text-2xl font-bold theme-text tracking-tight"></h2>
-                <button onclick="closeModal('detailModal')" class="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-600 transition">
+    <div id="detailModal" class="fixed inset-0 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden fade-in-up shadow-2xl">
+            <div class="p-5 border-b border-[#E6E0D9] flex justify-between items-center bg-white">
+                <h2 id="detailTitle" class="text-2xl font-bold serif-font tracking-tight"></h2>
+                <button onclick="closeModal('detailModal')" class="w-8 h-8 rounded hover:bg-gray-100 flex items-center justify-center text-gray-500 transition">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
             <div class="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-12 bg-white">
-                <div class="md:col-span-8 p-6 overflow-y-auto custom-scrollbar border-r border-gray-100">
-                    <div id="detailCalendarView" class="calendar-grid pb-20"></div>
+                <div class="md:col-span-8 p-6 overflow-y-auto custom-scrollbar border-r border-[#E6E0D9]">
+                    <div id="detailCalendarView" class="calendar-grid pb-20 border-l border-t border-[#E6E0D9]"></div>
                 </div>
-                <div class="md:col-span-4 flex flex-col h-full bg-gray-50/50 overflow-hidden">
-                    <div class="p-5 border-b border-gray-100 bg-white">
-                        <h4 class="font-bold text-gray-700 text-lg">
-                            <i class="fa-solid fa-tasks mr-2"></i>任务清单
-                        </h4>
+                <div class="md:col-span-4 flex flex-col h-full bg-[#F9F9F8] overflow-hidden">
+                    <div class="p-5 border-b border-[#E6E0D9] bg-[#F9F9F8]">
+                        <h4 class="font-bold text-gray-700 text-lg serif-font">任务清单</h4>
                     </div>
                     <div id="detailTaskList" class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2"></div>
-                    <div class="p-4 border-t border-gray-200 bg-white">
-                        <input type="text" id="quickTaskInput" placeholder="输入任务..." class="w-full p-3 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-300 outline-none bg-gray-50">
+                    <div class="p-4 border-t border-[#E6E0D9] bg-white">
+                        <input type="text" id="quickTaskInput" placeholder="+ 添加子任务..." class="w-full p-2 border-b border-0 rounded-none bg-transparent !important focus:border-[var(--theme-color)] outline-none text-sm">
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="statsModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl p-6 fade-in-up max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-bold theme-text">
-                    <i class="fa-solid fa-chart-line mr-2"></i>数据统计
-                </h3>
-                <button onclick="closeModal('statsModal')" class="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-600 transition">
+    <div id="statsModal" class="fixed inset-0 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg w-full max-w-3xl p-8 fade-in-up max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div class="flex justify-between items-center mb-8">
+                <h3 class="text-2xl font-bold serif-font text-[#37352F]">数据统计</h3>
+                <button onclick="closeModal('statsModal')" class="w-8 h-8 rounded hover:bg-gray-100 flex items-center justify-center text-gray-500 transition">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
             
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
                 <div class="stat-card">
-                    <div class="text-sm opacity-90 mb-1">总目标</div>
+                    <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">总目标</div>
                     <div class="text-3xl font-bold" id="statTotalGoals">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="text-sm opacity-90 mb-1">进行中</div>
+                    <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">进行中</div>
                     <div class="text-3xl font-bold" id="statActiveGoals">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="text-sm opacity-90 mb-1">总任务</div>
+                    <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">总任务</div>
                     <div class="text-3xl font-bold" id="statTotalTasks">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="text-sm opacity-90 mb-1">完成率</div>
+                    <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">完成率</div>
                     <div class="text-3xl font-bold" id="statCompletionRate">0%</div>
                 </div>
             </div>
             
-            <div class="bg-gray-50 rounded-xl p-4 mb-4">
-                <h4 class="font-bold text-gray-700 mb-3"><i class="fa-solid fa-tag mr-2"></i>分类统计</h4>
-                <div id="categoryStats" class="space-y-2"></div>
-            </div>
-            
-            <div class="bg-gray-50 rounded-xl p-4">
-                <h4 class="font-bold text-gray-700 mb-3"><i class="fa-solid fa-history mr-2"></i>最近7天完成任务</h4>
-                <div id="recentCompletions" class="text-center text-gray-500">暂无数据</div>
+            <div class="flex gap-6">
+                <div class="flex-1 bg-[#F7F7F5] rounded p-5">
+                    <h4 class="font-bold text-gray-700 mb-4 serif-font">分类统计</h4>
+                    <div id="categoryStats" class="space-y-2"></div>
+                </div>
+                <div class="flex-1 bg-[#F7F7F5] rounded p-5">
+                    <h4 class="font-bold text-gray-700 mb-4 serif-font">近期动态</h4>
+                    <div id="recentCompletions" class="text-center text-gray-500 text-sm mt-4">暂无数据</div>
+                </div>
             </div>
         </div>
     </div>
 
-    <div id="settingsModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar fade-in-up">
-            <h3 class="text-xl font-bold mb-4 theme-text">
-                <i class="fa-solid fa-palette mr-2"></i>主题设置
-            </h3>
+    <div id="settingsModal" class="fixed inset-0 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar fade-in-up">
+            <h3 class="text-xl font-bold mb-6 serif-font text-[#37352F]">设置</h3>
             
-            <div class="flex flex-wrap gap-5 items-end mb-4 pb-4 border-b border-gray-100">
-                <div>
-                    <label class="block text-sm font-bold mb-1.5 text-gray-700">主题色</label>
+            <div class="space-y-4 mb-6 pb-6 border-b border-[#E6E0D9]">
+                <p class="text-xs text-gray-400 uppercase tracking-wider font-bold">外观设置</p>
+                <div class="flex items-center justify-between">
+                    <label class="text-sm font-medium text-gray-700">主题颜色</label>
                     <input type="color" id="themeColorPicker" class="color-input-square" onchange="updateStyleRealtime()">
                 </div>
-                <div>
-                    <label class="block text-sm font-bold mb-1.5 text-gray-700">背景色</label>
+                <div class="flex items-center justify-between">
+                    <label class="text-sm font-medium text-gray-700">背景颜色</label>
                     <input type="color" id="bgColorPicker" class="color-input-square" onchange="updateStyleRealtime()">
                 </div>
-                <div class="w-[1px] h-[40px] bg-gray-200"></div>
-                <div>
-                    <label class="block text-sm font-bold mb-1.5 text-gray-700">自定义方案</label>
-                    <div class="flex gap-2" id="customSchemesContainer">
-                        </div>
+                 <div class="hidden">
+                    <input type="range" id="glassOpacityPicker" min="0.3" max="1" step="0.05" oninput="updateStyleRealtime()">
+                    <input type="range" id="imgOpacityPicker" min="0" max="1" step="0.05" oninput="updateStyleRealtime()">
+                </div>
+                <div class="flex justify-between items-center">
+                    <label class="text-sm font-medium text-gray-700">自定义配色方案</label>
+                    <div class="flex gap-2" id="customSchemesContainer"></div>
                 </div>
             </div>
 
-            <div class="space-y-3 mb-4 pb-4 border-b border-gray-100">
-                <label class="block text-sm font-bold mb-1.5 text-gray-700">
-                    <i class="fa-solid fa-database mr-2"></i>数据备份与恢复
-                </label>
+            <div class="space-y-4 mb-6 pb-6 border-b border-[#E6E0D9]">
+                <p class="text-xs text-gray-400 uppercase tracking-wider font-bold">数据管理</p>
                 <div class="flex gap-3">
-                    <button onclick="exportData()" class="flex-1 py-2 border border-gray-200 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-50 transition">
-                        <i class="fa-solid fa-download mr-1"></i>导出数据
-                    </button>
-                    <button onclick="triggerImport()" class="flex-1 py-2 border border-gray-200 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-50 transition">
-                        <i class="fa-solid fa-upload mr-1"></i>导入备份
-                    </button>
+                    <button onclick="exportData()" class="flex-1 py-2 border border-gray-200 rounded text-sm font-medium text-gray-600 hover:bg-gray-50 transition">导出数据</button>
+                    <button onclick="triggerImport()" class="flex-1 py-2 border border-gray-200 rounded text-sm font-medium text-gray-600 hover:bg-gray-50 transition">导入备份</button>
                     <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="importData(this)">
                 </div>
-                <p class="text-xs text-gray-400">建议定期导出备份，防止更换浏览器或清除缓存导致数据丢失。</p>
             </div>
 
-            <div class="space-y-1 mb-4 pb-4 border-b border-gray-100">
-                <div>
-                    <label class="block text-xs font-bold mb-1 text-gray-600">背景板透明度</label>
-                    <input type="range" id="glassOpacityPicker" min="0.3" max="1" step="0.05" class="w-full accent-indigo-600 h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer" oninput="updateStyleRealtime()">
-                </div>
-                <div class="pt-2">
-                    <label class="block text-xs font-bold mb-1 text-gray-600">图片/背景透明度</label>
-                    <input type="range" id="imgOpacityPicker" min="0" max="1" step="0.05" class="w-full accent-indigo-600 h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer" oninput="updateStyleRealtime()">
-                </div>
-            </div>
-
-            <div class="space-y-3 mb-4 pb-4 border-b border-gray-100">
-                <label class="block text-sm font-bold mb-1.5 text-gray-700">
-                    <i class="fa-solid fa-tags mr-2"></i>标签颜色
-                </label>
-                <div class="flex gap-4 justify-between px-2" id="settingsPresetContainer">
-                    </div>
+            <div class="space-y-4 mb-6 pb-6 border-b border-[#E6E0D9]">
+                <p class="text-xs text-gray-400 uppercase tracking-wider font-bold">任务色板配置</p>
+                <div class="flex gap-4 justify-between px-2" id="settingsPresetContainer"></div>
             </div>
             
-            <div class="space-y-3 mb-4 pb-4 border-b border-gray-100">
-                <label class="block text-sm font-bold mb-1.5 text-gray-700">
-                    <i class="fa-solid fa-image mr-2"></i>上传本地图片
-                </label>
-                <input type="file" id="localBgInput" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
-                <button onclick="clearBackground()" class="text-xs text-red-500 hover:text-red-700 transition">
-                    <i class="fa-solid fa-times mr-1"></i>清除背景图片
-                </button>
+            <div class="space-y-3 mb-6 pb-6 border-b border-[#E6E0D9]">
+                <p class="text-xs text-gray-400 uppercase tracking-wider font-bold">自定义背景图</p>
+                <input type="file" id="localBgInput" accept="image/*" class="w-full text-sm text-gray-500">
+                <button onclick="clearBackground()" class="text-xs text-red-500 hover:text-red-700 transition">清除背景图</button>
             </div>
             
-            <div class="space-y-3 mb-4">
-                <label class="block text-sm font-bold mb-1.5 text-gray-700">
-                    <i class="fa-solid fa-list mr-2"></i>自定义分类
-                </label>
-                <textarea id="categoriesInput" rows="2" class="w-full p-2 border rounded text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="用逗号分隔..."></textarea>
+            <div class="space-y-3 mb-6">
+                <p class="text-xs text-gray-400 uppercase tracking-wider font-bold">分类设置</p>
+                <textarea id="categoriesInput" rows="2" class="w-full p-2 border rounded text-sm outline-none" placeholder="工作, 生活, 学习, 健康..."></textarea>
             </div>
             
             <div class="flex gap-3">
-                <button onclick="closeModal('settingsModal')" class="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition">
-                    取消
-                </button>
-                <button onclick="saveSettings()" class="flex-1 py-3 theme-bg text-white rounded-xl font-bold shadow-lg hover:opacity-90 transition">
-                    <i class="fa-solid fa-check mr-2"></i>保存设置
-                </button>
+                <button onclick="closeModal('settingsModal')" class="flex-1 py-2 bg-gray-100 text-gray-700 rounded text-sm font-bold hover:bg-gray-200 transition">取消</button>
+                <button onclick="saveSettings()" class="flex-1 py-2 theme-bg text-white rounded text-sm font-bold hover:opacity-90 transition">保存更改</button>
             </div>
         </div>
     </div>
@@ -837,27 +692,22 @@
         let data = {
             goals: [],
             subtasks: [],
-            categories: ['工作', '学习', '生活', '健康'],
+            categories: ['工作', '生活', '学习', '健康'],
             settings: {
-                // 2. 还原：默认配色 (深苔绿 + 浅灰绿)
-                theme: '#4c6c02',
+                theme: '#8D7B68', 
                 themeOpacity: 1,
-                glassOpacity: 0.95,
-                imgOpacity: 0.5,
+                glassOpacity: 1,
+                imgOpacity: 1,
                 bg: '',
-                bgColor: '#f3f6f3', 
-                appTitle: 'My Planner', 
-                // 2. 还原：莫兰迪色系标签
-                taskPresets: ["#81ad62", "#84b1ca", "#f0c035", "#e294b3", "#b7aad8"],
+                bgColor: '#F9F7F3', 
+                appTitle: '我的计划', 
+                taskPresets: ["#D3E5EF", "#E8DEEE", "#FDECC8", "#F4E0E9", "#DBEDDB"],
                 customSchemes: [null, null, null] 
             }
         };
-        
         let currentGoalId = null;
         let editingGoalId = null;
         let currentView = 'calendar';
-        
-        // 批量选择模式状态
         let isSelectionMode = false;
         let selectedTasks = new Set();
 
@@ -907,11 +757,12 @@
         // ==================== 初始化 ====================
         function init() {
             loadData();
-            // 兼容性处理
-            if (!data.settings.taskPresets || data.settings.taskPresets.length === 0) {
-                data.settings.taskPresets = ["#81ad62", "#84b1ca", "#f0c035", "#e294b3", "#b7aad8"];
+            if (!data.settings.taskPresets || data.settings.taskPresets.length === 0 || data.settings.taskPresets[0] === "#81ad62") {
+                data.settings.taskPresets = ["#D3E5EF", "#E8DEEE", "#FDECC8", "#F4E0E9", "#DBEDDB"];
             }
-            if (!data.settings.bgColor) data.settings.bgColor = '#f3f6f3';
+            if (!data.settings.bgColor) data.settings.bgColor = '#F9F7F3';
+            if (!data.settings.theme) data.settings.theme = '#8D7B68';
+            
             if (!data.settings.customSchemes) data.settings.customSchemes = [null, null, null];
             
             if (data.settings.appTitle) {
@@ -926,7 +777,6 @@
         }
 
         function loadData() {
-            // 2. 升级版本 v16，强制刷新默认配色
             const saved = localStorage.getItem('dailyPlannerPro_v16');
             if (saved) {
                 try {
@@ -944,24 +794,21 @@
                 if (e.key === 'Enter') addSubtaskFromInput();
             });
             document.getElementById('localBgInput').addEventListener('change', handleImageUpload);
-            // 注册全局键盘监听
             document.addEventListener('keydown', handleKeyboardShortcuts);
         }
 
         function handleKeyboardShortcuts(e) {
-            // 任务弹窗回车保存
             const taskModal = document.getElementById('taskModal');
             if (!taskModal.classList.contains('hidden')) {
                 if (e.key === 'Enter') {
-                    e.preventDefault(); 
+                    e.preventDefault();
                     saveTaskFromModal();
                     return;
                 }
             }
-
-            // 原有快捷键
             if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-                e.preventDefault(); openAddGoalModal();
+                e.preventDefault();
+                openAddGoalModal();
             }
             if (e.key === 'Escape') closeAllModals();
         }
@@ -983,16 +830,13 @@
             document.getElementById(`${viewName}View`).classList.add('active');
         }
 
-        // 1. 核心修复：统一视图刷新，确保无死角刷新
         function refreshViews() {
             saveData();
-            renderAll(); // 刷新主界面
-            
-            // 只要详情页是打开的，就强制刷新详情页内容
+            renderAll(); 
             const detailModal = document.getElementById('detailModal');
             if (!detailModal.classList.contains('hidden') && currentGoalId) {
-                renderDetailTaskList(); // 刷新右侧列表
-                renderDetailCalendar(); // 刷新左侧日历
+                renderDetailTaskList();
+                renderDetailCalendar();
             }
         }
 
@@ -1002,13 +846,42 @@
             renderCompleted();
             renderMiniCalendar();
             updateTaskGoalSelect();
+            updateTodayProgress(); // 新增：更新进度条
+        }
+        
+        // 新增功能：今日任务进度条
+        function updateTodayProgress() {
+            const todayStr = getTodayStr();
+            const tasks = data.subtasks.filter(t => t.date === todayStr);
+            const total = tasks.length;
+            const completed = tasks.filter(t => t.completed).length;
+            const el = document.getElementById('todayProgress');
+            
+            if (total === 0) {
+                // 如果没有任务，可以隐藏或者显示0%
+                document.getElementById('progressText').innerText = "今日: 0%";
+                document.getElementById('progressBar').style.width = "0%";
+                el.classList.remove('opacity-0');
+                document.getElementById('celebration').classList.add('hidden');
+                return;
+            }
+            
+            el.classList.remove('opacity-0');
+            const percent = Math.round((completed / total) * 100);
+            document.getElementById('progressText').innerText = `今日: ${percent}%`;
+            document.getElementById('progressBar').style.width = `${percent}%`;
+            
+            if (percent === 100) {
+                document.getElementById('celebration').classList.remove('hidden');
+            } else {
+                document.getElementById('celebration').classList.add('hidden');
+            }
         }
         
         function updateTaskGoalSelect() {
             const activeGoals = data.goals.filter(g => !g.completed);
-            const optionsHtml = '<option value="">独立任务</option>' + 
+            const optionsHtml = '<option value="">无目标 (独立任务)</option>' + 
                 activeGoals.map(g => `<option value="${g.id}">${g.title}</option>`).join('');
-            
             const modalSelect = document.getElementById('taskGoalSelectModal');
             if (modalSelect) modalSelect.innerHTML = optionsHtml;
         }
@@ -1019,31 +892,37 @@
             
             const select = document.getElementById('ddlFilterSelect');
             const currentFilter = select.value;
-            
             const optionsHtml = '<option value="all">全部目标</option>' + 
+                                '<option value="all_tasks">全部任务</option>' + 
                 data.goals.filter(g => !g.completed)
                     .map(g => `<option value="${g.id}">${g.title}</option>`)
                     .join('');
             if (select.innerHTML !== optionsHtml) {
                 select.innerHTML = optionsHtml;
-                select.value = currentFilter;
+                if(currentFilter && (currentFilter === 'all' || currentFilter === 'all_tasks' || data.goals.some(g => g.id === currentFilter))) {
+                    select.value = currentFilter;
+                } else {
+                    select.value = 'all';
+                }
             }
-
+            const activeFilter = select.value;
             const now = new Date();
             const startOfWeek = new Date(now);
             startOfWeek.setDate(now.getDate() - now.getDay());
             
-            document.getElementById('miniCalTitle').innerText = `${now.getFullYear()}年 ${now.getMonth() + 1}月`;
+            let titleSuffix = "";
+            if(activeFilter === "all_tasks") titleSuffix = "";
+            
+            document.getElementById('miniCalTitle').innerText = `${now.getFullYear()}年 ${now.getMonth() + 1}月${titleSuffix}`;
             
             ['日', '一', '二', '三', '四', '五', '六'].forEach(w => {
-                container.innerHTML += `<div class="text-center text-sm text-gray-600 py-2 font-semibold opacity-100" style="opacity: 1 !important;">${w}</div>`;
+                container.innerHTML += `<div class="text-center text-xs text-gray-400 py-2 font-semibold uppercase tracking-wider">${w}</div>`;
             });
-            
             let loop = new Date(startOfWeek);
             let daysToShow = 35; 
             
-            if (currentFilter !== 'all') {
-                const goal = data.goals.find(g => g.id === currentFilter);
+            if (activeFilter !== 'all' && activeFilter !== 'all_tasks') {
+                const goal = data.goals.find(g => g.id === activeFilter);
                 if (goal) {
                     const ddlDate = parseDateStr(goal.ddl);
                     const ddlWeekEnd = new Date(ddlDate);
@@ -1058,25 +937,47 @@
                 const dateStr = `${loop.getFullYear()}-${String(loop.getMonth() + 1).padStart(2, '0')}-${String(loop.getDate()).padStart(2, '0')}`;
                 const isToday = dateStr === getTodayStr();
                 
-                if (currentFilter === 'all') {
+                if (activeFilter === 'all') {
                     const goalsToday = data.goals.filter(g => g.ddl === dateStr && !g.completed);
                     let content = `<span class="relative z-10 ${goalsToday.length > 0 ? 'date-highlight-theme' : ''}">${loop.getDate()}</span>`;
-                    
                     if (goalsToday.length > 0) {
-                        content += `<div class="cal-goal-tag">${goalsToday[0].title}</div>`;
-                        if (goalsToday.length > 1) {
-                            content += `<div class="text-[10px] text-gray-400 mt-1">+${goalsToday.length - 1}</div>`;
-                        }
+                        content += `<div class="flex flex-col gap-1 mt-1 w-full">`;
+                        goalsToday.forEach(g => {
+                            content += `<div class="cal-goal-tag truncate" title="${g.title}">${g.title}</div>`;
+                        });
+                        content += `</div>`;
                     }
                     container.innerHTML += `<div class="calendar-day ${isToday ? 'cal-today' : ''}" onclick="showDayDetail('${dateStr}')">${content}</div>`;
+                } else if (activeFilter === 'all_tasks') {
+                    const tasks = data.subtasks.filter(s => s.date === dateStr);
+                    tasks.sort((a, b) => a.completed - b.completed);
+
+                    let taskHtml = '';
+                    tasks.forEach(t => {
+                        let bg = t.color || 'rgba(0,0,0,0.04)'; 
+                        
+                        taskHtml += `
+                            <div class="cal-task-item ${t.completed ? 'done' : ''}" 
+                                 style="background-color: ${bg}; cursor: pointer;" 
+                                 onclick="event.stopPropagation(); editTask('${t.id}');"
+                                 title="${t.title}">
+                                 ${t.completed ? '<i class="fa-solid fa-check mr-1 text-[9px]"></i>' : ''}${t.title}
+                            </div>`;
+                    });
+                    container.innerHTML += `
+                        <div class="calendar-day ${isToday ? 'cal-today' : ''}" onclick="selectDateForTask('${dateStr}', '')">
+                            <span class="font-bold text-gray-500 z-10 block mb-1 text-xs">${loop.getDate()}</span>
+                            <div class="w-full flex flex-col overflow-hidden">
+                                ${taskHtml}
+                            </div>
+                        </div>`;
                 } else {
-                    const goal = data.goals.find(g => g.id === currentFilter);
+                    const goal = data.goals.find(g => g.id === activeFilter);
                     if (!goal) continue;
                     
                     const isDDL = goal.ddl === dateStr;
                     const diff = Math.ceil((parseDateStr(goal.ddl) - loop) / 86400000);
-                    
-                    let html = `<span class="font-bold text-gray-500 z-10">${loop.getDate()}</span>`;
+                    let html = `<span class="font-bold text-gray-500 z-10 text-xs">${loop.getDate()}</span>`;
                     
                     if (goal && loop <= parseDateStr(goal.ddl) && loop >= parseDateStr(getTodayStr()) && !isDDL) {
                         let badgeClass = 'badge-normal';
@@ -1089,13 +990,13 @@
                         html = `<span class="date-circle-red z-10">${loop.getDate()}</span>`;
                     }
                     
-                    const tasks = data.subtasks.filter(s => s.goalId === currentFilter && s.date === dateStr);
+                    const tasks = data.subtasks.filter(s => s.goalId === activeFilter && s.date === dateStr);
                     const taskHtml = tasks.map(t => {
-                        const taskColor = t.color || 'var(--theme-color)';
-                        return `<div class="cal-task-item ${t.completed ? 'done' : ''}" style="background: ${taskColor}; cursor: pointer;" onclick="event.stopPropagation(); editTask('${t.id}');">${t.title}</div>`;
+                        // 修改：在特定目标视图下也使用全色块背景样式
+                        let bg = t.color || 'rgba(0,0,0,0.04)';
+                        return `<div class="cal-task-item ${t.completed ? 'done' : ''}" style="background-color: ${bg}; cursor: pointer;" onclick="event.stopPropagation(); editTask('${t.id}');">${t.title}</div>`;
                     }).join('');
-                    
-                    container.innerHTML += `<div class="calendar-day ${isToday ? 'cal-today' : ''}" onclick="selectDateForTask('${dateStr}', '${currentFilter}')">${html}<div class="w-full flex flex-col items-center mt-1">${taskHtml}</div></div>`;
+                    container.innerHTML += `<div class="calendar-day ${isToday ? 'cal-today' : ''}" onclick="selectDateForTask('${dateStr}', '${activeFilter}')">${html}<div class="w-full flex flex-col items-center mt-1">${taskHtml}</div></div>`;
                 }
                 
                 loop.setDate(loop.getDate() + 1);
@@ -1106,11 +1007,11 @@
             const container = document.getElementById('stepsList');
             const btn = document.getElementById('bulkSelectBtn');
             if (isSelectionMode) {
-                btn.classList.add('bg-red-100', 'text-red-500');
+                btn.classList.add('bg-red-50', 'text-red-500');
                 document.getElementById('bulkDeleteBar').classList.remove('hidden');
                 document.getElementById('quickAddBar').classList.add('hidden');
             } else {
-                btn.classList.remove('bg-red-100', 'text-red-500');
+                btn.classList.remove('bg-red-50', 'text-red-500');
                 document.getElementById('bulkDeleteBar').classList.add('hidden');
                 document.getElementById('quickAddBar').classList.remove('hidden');
             }
@@ -1119,7 +1020,6 @@
                 !s.completed && 
                 (!s.goalId || (data.goals.find(g => g.id === s.goalId) && !data.goals.find(g => g.id === s.goalId).completed))
             );
-            
             document.getElementById('taskCountBadge').innerText = tasks.length;
             
             const todayStr = getTodayStr();
@@ -1128,21 +1028,20 @@
             const pastTasks = tasks.filter(t => t.date < todayStr).sort((a, b) => parseDateStr(a.date) - parseDateStr(b.date));
 
             container.innerHTML = '';
-            
             if (pastTasks.length) {
                 container.innerHTML += pastTasks.map(t => renderTaskItem(t, 'past')).join('');
-                container.innerHTML += `<div class="task-separator"><span>以上已过期</span></div>`;
+                container.innerHTML += `<div class="task-separator"><span>已过期</span></div>`;
             }
             
             if (todayTasks.length) {
                 container.innerHTML += todayTasks.map(t => renderTaskItem(t, 'today')).join('');
             } else if (tasks.length > 0) {
                 container.innerHTML += `<div class="text-center text-xs text-gray-400 py-4">
-                    <i class="fa-solid fa-coffee text-2xl mb-2 opacity-50"></i><p>今天暂无安排</p>
+                    <p>今天暂无任务</p>
                 </div>`;
             } else {
                 container.innerHTML = `<div class="empty-state">
-                    <i class="fa-solid fa-check-circle"></i><p>今日清闲</p>
+                    <i class="fa-solid fa-check-circle"></i><p>所有任务已完成！</p>
                 </div>`;
             }
             
@@ -1154,7 +1053,7 @@
 
         function renderTaskItem(s, type) {
             const parent = s.goalId ? data.goals.find(g => g.id === s.goalId) : null;
-            let bg = type === 'today' ? 'bg-white shadow-md transform scale-[1.01]' : 'bg-white/80 hover:bg-white shadow-sm';
+            let bgClass = "task-item-card"; 
             
             let checkboxHtml;
             if (isSelectionMode) {
@@ -1166,28 +1065,26 @@
             } else {
                 checkboxHtml = `
                 <div class="flex gap-2">
-                    <button onclick="deleteTask('${s.id}')" class="w-7 h-7 rounded-full hover:bg-red-50 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition">
-                        <i class="fa-solid fa-trash text-xs"></i>
-                    </button>
-                    <button onclick="toggleTaskStatus('${s.id}')" class="task-checkbox w-7 h-7 rounded-full border-2 border-gray-300 flex items-center justify-center transition hover:border-[var(--theme-color)]">
+                    <button onclick="toggleTaskStatus('${s.id}')" class="task-checkbox w-5 h-5 flex items-center justify-center transition hover:border-[var(--theme-color)]">
                         <i class="fa-solid fa-check text-xs opacity-0 group-hover:opacity-100 text-gray-400"></i>
                     </button>
                 </div>`;
             }
 
             const clickAction = isSelectionMode ? `onclick="toggleTaskSelection('${s.id}')"` : '';
-
+            const barColor = s.color || 'transparent';
+            
             return `
-            <div class="${bg} p-3 rounded-xl flex items-center justify-between group transition mb-2 fade-in-up relative overflow-hidden" ${clickAction}>
-                <div class="absolute top-0 left-0 w-1 h-full theme-bg"></div>
+            <div class="${bgClass} p-3 flex items-center justify-between group transition mb-2 fade-in-up relative overflow-hidden" ${clickAction}>
                 ${isSelectionMode ? checkboxHtml : ''}
-                <div class="flex-1 min-w-0 mr-3 pl-2">
+                <div class="flex-1 min-w-0 mr-3 pl-2 border-l-2" style="border-color: ${barColor}">
                     <div class="flex items-center gap-2 mb-1">
-                        <span class="font-semibold text-gray-800 text-sm truncate cursor-text" ${!isSelectionMode ? `ondblclick="editTask('${s.id}')"` : ''} title="${s.title}">${s.title}</span>
+                        <span class="text-[#37352F] text-sm truncate cursor-text" ${!isSelectionMode ? `ondblclick="editTask('${s.id}')"` : ''} title="${s.title}">${s.title}</span>
                         ${!isSelectionMode ? `<button onclick="editTask('${s.id}')" class="opacity-0 group-hover:opacity-100 text-xs text-gray-300 edit-btn-theme transition"><i class="fa-solid fa-pencil"></i></button>` : ''}
+                         <button onclick="deleteTask('${s.id}')" class="opacity-0 group-hover:opacity-100 text-xs text-gray-300 hover:text-red-500 transition ml-auto"><i class="fa-solid fa-trash"></i></button>
                     </div>
-                    <div class="text-xs text-gray-500 flex gap-3 items-center">
-                        <span class="${type === 'past' ? 'text-red-500 font-bold' : ''}">
+                    <div class="text-[10px] text-gray-400 flex gap-3 items-center font-medium">
+                        <span class="${type === 'past' ? 'text-red-500' : ''}">
                             <i class="fa-regular fa-calendar mr-1"></i>${formatDate(s.date)}
                         </span>
                         ${parent ? `<span class="theme-tag truncate max-w-[80px]" title="${parent.title}">${parent.title}</span>` : ''}
@@ -1221,8 +1118,8 @@
         }
 
         function deleteSelectedTasks() {
-            if (selectedTasks.size === 0) return alert('请先勾选任务');
-            if (!confirm(`确定删除这 ${selectedTasks.size} 个任务吗？`)) return;
+            if (selectedTasks.size === 0) return alert('请先选择任务');
+            if (!confirm(`确定要删除 ${selectedTasks.size} 个任务吗？`)) return;
             
             data.subtasks = data.subtasks.filter(s => !selectedTasks.has(s.id));
             toggleSelectionMode(); 
@@ -1233,9 +1130,8 @@
             const container = document.getElementById('goalsContent');
             const list = data.goals.filter(g => !g.completed);
             list.sort((a, b) => parseDateStr(a.ddl) - parseDateStr(b.ddl));
-            
             if (list.length === 0) {
-                container.innerHTML = `<div class="empty-state"><i class="fa-solid fa-bullseye"></i><p>暂无目标</p></div>`;
+                container.innerHTML = `<div class="empty-state"><i class="fa-solid fa-bullseye"></i><p>暂无进行中目标</p></div>`;
                 return;
             }
             
@@ -1248,28 +1144,27 @@
                 else if (diff <= 3) badgeClass = 'badge-urgent';
                 else if (diff <= 7) badgeClass = 'badge-warning';
                 
-                let badgeText = diff < 0 ? `逾期${Math.abs(diff)}天` : `${diff}天`;
+                let badgeText = diff < 0 ? `逾期 ${Math.abs(diff)}天` : `剩 ${diff} 天`;
                 const relTasks = data.subtasks.filter(s => s.goalId === g.id);
                 const progress = relTasks.length ? Math.round((relTasks.filter(s => s.completed).length / relTasks.length) * 100) : 0;
                 
                 return `
-                <div class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition cursor-pointer group relative overflow-hidden fade-in-up" onclick="openDetail('${g.id}')">
-                    <div class="absolute top-0 left-0 w-1 h-full theme-bg"></div>
-                    <div class="flex justify-between items-start mb-1 pl-2">
-                        <div class="font-bold text-gray-800 text-sm truncate pr-2" title="${g.title}">${g.title}</div>
+                <div class="bg-white p-3 rounded border border-gray-200 shadow-sm hover:shadow-md transition cursor-pointer group relative overflow-hidden fade-in-up" onclick="openDetail('${g.id}')">
+                    <div class="flex justify-between items-start mb-1 pl-1">
+                        <div class="font-bold text-[#37352F] text-sm truncate pr-2 serif-font" title="${g.title}">${g.title}</div>
                         <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
                             <button onclick="event.stopPropagation(); openEditGoalModal('${g.id}')" class="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-100 text-gray-400 edit-btn-theme"><i class="fa-solid fa-pencil text-xs"></i></button>
-                            <button onclick="event.stopPropagation(); deleteGoal('${g.id}')" class="w-5 h-5 flex items-center justify-center rounded hover:bg-red-100 text-gray-400 hover:text-red-500"><i class="fa-solid fa-trash text-xs"></i></button>
+                            <button onclick="event.stopPropagation(); deleteGoal('${g.id}')" class="w-5 h-5 flex items-center justify-center rounded hover:bg-red-50 text-gray-400 hover:text-red-500"><i class="fa-solid fa-trash text-xs"></i></button>
                         </div>
                     </div>
-                    <div class="flex justify-between items-center text-xs pl-2 mb-2">
+                    <div class="flex justify-between items-center text-xs pl-1 mb-2">
                         <div>
                             <span class="countdown-badge-classic ${badgeClass} relative top-0 right-0">${badgeText}</span>
                             <span class="theme-tag ml-2">${g.category}</span>
                         </div>
                         <div class="text-gray-400 font-bold">${progress}%</div>
                     </div>
-                    <div class="bg-gray-100 h-1 rounded-full ml-2 overflow-hidden w-[calc(100%-8px)]">
+                    <div class="bg-[#F0EEEB] h-1 rounded-full ml-1 overflow-hidden w-[calc(100%-4px)]">
                         <div class="theme-bg h-full transition-all duration-300" style="width: ${progress}%"></div>
                     </div>
                 </div>`;
@@ -1282,11 +1177,11 @@
             
             const cGoals = data.goals.filter(g => g.completed);
             if (cGoals.length) {
-                container.innerHTML += `<div class="text-xs text-gray-400 font-bold mb-2"><i class="fa-solid fa-trophy mr-1"></i>已达成目标</div>`;
+                container.innerHTML += `<div class="text-xs text-gray-400 font-bold mb-2 uppercase tracking-wider">已完成目标</div>`;
                 cGoals.forEach(g => {
                     container.innerHTML += `
-                    <div class="bg-green-50 p-2 rounded border border-green-100 flex justify-between items-center mb-2 group hover:bg-green-100 transition">
-                        <span class="font-bold text-gray-600 line-through text-xs truncate flex-1" title="${g.title}">${g.title}</span>
+                    <div class="bg-[#F7F6F3] p-2 rounded border border-gray-200 flex justify-between items-center mb-2 group hover:bg-[#F0EEEB] transition">
+                        <span class="font-bold text-gray-500 line-through text-xs truncate flex-1 serif-font" title="${g.title}">${g.title}</span>
                         <div class="flex gap-2">
                             <button onclick="deleteGoal('${g.id}')" class="text-xs text-gray-400 hover:text-red-500"><i class="fa-solid fa-trash"></i></button>
                             <button onclick="restoreGoal('${g.id}')" class="theme-tag restore-btn-theme"><i class="fa-solid fa-rotate-left mr-1"></i>恢复</button>
@@ -1297,10 +1192,10 @@
             
             const cTasks = data.subtasks.filter(s => s.completed).sort((a, b) => b.id - a.id).slice(0, 10);
             if (cTasks.length) {
-                container.innerHTML += `<div class="text-xs text-gray-400 font-bold mb-2 mt-3"><i class="fa-solid fa-check mr-1"></i>最近完成任务</div>`;
+                container.innerHTML += `<div class="text-xs text-gray-400 font-bold mb-2 mt-3 uppercase tracking-wider">近期完成任务</div>`;
                 cTasks.forEach(s => {
                     container.innerHTML += `
-                    <div class="flex justify-between items-center p-2 bg-gray-50/50 rounded border border-gray-100 mb-1 text-xs group hover:bg-gray-100 transition">
+                    <div class="flex justify-between items-center p-2 bg-white rounded border border-gray-100 mb-1 text-xs group hover:bg-[#F7F6F3] transition">
                         <span class="text-gray-400 line-through truncate flex-1 mr-2" title="${s.title}">${s.title}</span>
                         <div class="flex gap-2">
                             <button onclick="deleteTask('${s.id}')" class="text-gray-400 hover:text-red-500"><i class="fa-solid fa-trash"></i></button>
@@ -1311,14 +1206,14 @@
             }
             
             if (!cGoals.length && !cTasks.length) {
-                container.innerHTML = `<div class="empty-state"><i class="fa-solid fa-inbox"></i><p>无完成记录</p></div>`;
+                container.innerHTML = `<div class="empty-state"><i class="fa-solid fa-inbox"></i><p>暂无记录</p></div>`;
             }
         }
 
         function openDetail(id) {
             currentGoalId = id;
             const g = data.goals.find(x => x.id === id);
-            document.getElementById('detailTitle').innerHTML = `<i class="fa-solid fa-flag mr-2"></i>${g.title}`;
+            document.getElementById('detailTitle').innerHTML = `${g.title}`;
             document.getElementById('detailModal').classList.remove('hidden');
             renderDetailCalendar();
             renderDetailTaskList();
@@ -1329,7 +1224,6 @@
             container.innerHTML = '';
             const goal = data.goals.find(g => g.id === currentGoalId);
             const now = new Date();
-            
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             const startOfWeek = new Date(today);
             startOfWeek.setDate(today.getDate() - today.getDay()); 
@@ -1349,17 +1243,15 @@
                 end = ddlWeekEnd;
             }
             
-            ['日', '一', '二', '三', '四', '五', '六'].forEach(w => container.innerHTML += `<div class="text-center text-xs font-bold text-gray-600 py-1" style="opacity: 1 !important;">${w}</div>`);
-            
+            ['日', '一', '二', '三', '四', '五', '六'].forEach(w => container.innerHTML += `<div class="text-center text-xs font-bold text-gray-400 py-1 uppercase tracking-wider">${w}</div>`);
             let loop = new Date(startOfWeek);
             while (loop <= end) {
                 const dStr = `${loop.getFullYear()}-${String(loop.getMonth() + 1).padStart(2, '0')}-${String(loop.getDate()).padStart(2, '0')}`;
                 const isDDL = dStr === goal.ddl;
                 const isToday = dStr === getTodayStr();
                 const diff = Math.ceil((parseDateStr(goal.ddl) - loop) / 86400000);
-                
                 let html = '';
-                let dateHtml = `<span class="font-bold text-gray-500">${loop.getDate()}</span>`;
+                let dateHtml = `<span class="font-bold text-gray-500 text-xs">${loop.getDate()}</span>`;
                 if (loop <= parseDateStr(goal.ddl) && loop >= parseDateStr(getTodayStr()) && !isDDL) {
                     if (diff <= 365) {
                         let badgeClass = 'badge-normal';
@@ -1375,52 +1267,47 @@
                 
                 const tasks = data.subtasks.filter(s => s.goalId === currentGoalId && s.date === dStr);
                 const taskHtml = tasks.map(t => {
-                    const taskColor = t.color || 'var(--theme-color)';
-                    return `<div class="text-white text-[10px] px-1 rounded truncate mt-0.5 opacity-80 hover:opacity-100 transition w-full max-w-full ${t.completed ? 'line-through' : ''}" style="background: ${taskColor}; cursor: pointer;" onclick="event.stopPropagation(); editTask('${t.id}');">${t.title}</div>`;
+                    return `<div class="text-[#37352F] text-[10px] px-1 rounded truncate mt-0.5 hover:opacity-100 transition w-full max-w-full ${t.completed ? 'line-through opacity-50' : ''}" style="border-left: 3px solid ${t.color || 'var(--theme-color)'}; background: #FAFAFA; cursor: pointer;" onclick="event.stopPropagation(); editTask('${t.id}');">${t.title}</div>`;
                 }).join('');
-
                 container.innerHTML += `
-                <div class="min-h-[80px] border border-gray-100 p-1 rounded relative hover:shadow-md transition bg-white overflow-hidden ${isToday ? 'border-2 border-[var(--theme-color)]' : ''}" onclick="selectDateForTask('${dStr}', '${currentGoalId}')">
+                <div class="min-h-[80px] border border-gray-100 p-1 relative hover:shadow-md transition bg-white overflow-hidden ${isToday ? 'bg-[#F7F6F3]' : ''}" onclick="selectDateForTask('${dStr}', '${currentGoalId}')">
                     ${dateHtml}<div class="flex flex-col w-full overflow-hidden">${taskHtml}</div>${html}
                 </div>`;
                 loop.setDate(loop.getDate() + 1);
             }
         }
 
-        // 1. 修复：renderDetailTaskList (确保正确显示所有任务)
         function renderDetailTaskList() {
             const listContainer = document.getElementById('detailTaskList');
             const tasks = data.subtasks.filter(s => s.goalId === currentGoalId);
             tasks.sort((a, b) => parseDateStr(a.date) - parseDateStr(b.date));
-            
             if (tasks.length === 0) {
                 listContainer.innerHTML = `<div class="empty-state"><i class="fa-solid fa-tasks"></i><p>暂无任务</p></div>`;
                 return;
             }
             
             listContainer.innerHTML = tasks.map(s => `
-                <div class="flex items-center gap-3 p-3 bg-white border border-gray-100 rounded-lg hover:shadow-sm transition group fade-in-up">
-                    <button onclick="toggleTaskStatus('${s.id}')" class="task-checkbox ${s.completed ? 'checked' : ''} w-6 h-6 rounded-full border-2 ${s.completed ? 'border-[var(--theme-color)] bg-[var(--theme-color)]' : 'border-gray-300 bg-white'} flex items-center justify-center transition hover:border-[var(--theme-color)]">
+                <div class="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded hover:shadow-sm transition group fade-in-up">
+                    <button onclick="toggleTaskStatus('${s.id}')" class="task-checkbox ${s.completed ? 'checked' : ''} w-5 h-5 flex items-center justify-center transition hover:border-[var(--theme-color)]">
                         <i class="fa-solid fa-check text-xs ${s.completed ? 'text-white' : 'text-transparent'}"></i>
                     </button>
                     <div class="flex-1 ${s.completed ? 'line-through text-gray-400' : 'text-gray-700'}">
                         <div class="text-sm font-medium cursor-text" ondblclick="editTask('${s.id}')" title="${s.title}">${s.title}</div>
-                        <div class="text-xs text-gray-400"><i class="fa-regular fa-calendar mr-1"></i>${formatDate(s.date)}</div>
+                        <div class="text-[10px] text-gray-400"><i class="fa-regular fa-calendar mr-1"></i>${formatDate(s.date)}</div>
                     </div>
                     <button onclick="editTask('${s.id}')" class="text-gray-300 edit-btn-theme opacity-0 group-hover:opacity-100 transition px-2"><i class="fa-solid fa-pencil"></i></button>
                     <button onclick="deleteTask('${s.id}')" class="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition px-2"><i class="fa-solid fa-trash"></i></button>
                 </div>
             `).join('');
-            
             const goal = data.goals.find(g => g.id === currentGoalId);
             if (tasks.length > 0 && tasks.every(t => t.completed) && !goal.completed) {
-                listContainer.innerHTML += `<button onclick="completeGoal('${currentGoalId}')" class="w-full mt-4 py-3 bg-green-100 text-green-700 rounded-xl hover:bg-green-200 transition font-bold shadow-sm">🎉 任务全部完成，归档该目标！</button>`;
+                listContainer.innerHTML += `<button onclick="completeGoal('${currentGoalId}')" class="w-full mt-4 py-2 bg-[#E7F3F0] text-[#448361] rounded transition font-bold shadow-sm text-sm">🎉 任务全部完成，归档该目标！</button>`;
             }
         }
 
         function openAddGoalModal() {
             editingGoalId = null;
-            document.getElementById('goalModalTitle').innerHTML = '<i class="fa-solid fa-flag mr-2"></i>新建目标';
+            document.getElementById('goalModalTitle').innerHTML = '新建目标';
             document.getElementById('goalTitle').value = '';
             document.getElementById('goalDDL').value = getTodayStr();
             document.getElementById('goalModal').classList.remove('hidden');
@@ -1431,7 +1318,7 @@
         function openEditGoalModal(id) {
             editingGoalId = id;
             const g = data.goals.find(x => x.id === id);
-            document.getElementById('goalModalTitle').innerHTML = '<i class="fa-solid fa-pencil mr-2"></i>编辑目标';
+            document.getElementById('goalModalTitle').innerHTML = '编辑目标';
             document.getElementById('goalTitle').value = g.title;
             document.getElementById('goalDDL').value = g.ddl;
             document.getElementById('goalModal').classList.remove('hidden');
@@ -1449,7 +1336,6 @@
             const ddl = document.getElementById('goalDDL').value;
             const cat = document.getElementById('goalCategorySelect').value;
             if (!title || !ddl) return alert('请完善信息');
-            
             if (editingGoalId) {
                 const g = data.goals.find(x => x.id === editingGoalId);
                 g.title = title; g.ddl = ddl; g.category = cat;
@@ -1460,7 +1346,7 @@
         }
 
         function deleteGoal(id) {
-            if (!confirm('确定删除？')) return;
+            if (!confirm('确定要删除吗？')) return;
             data.goals = data.goals.filter(g => g.id !== id);
             data.subtasks = data.subtasks.filter(s => s.goalId !== id);
             saveData(); renderAll();
@@ -1477,14 +1363,13 @@
         }
 
         let editingTaskId = null;
-        
         function editTask(id) {
             const task = data.subtasks.find(s => s.id === id);
             if (!task) return;
             
             editingTaskId = id;
             document.getElementById('taskModal').classList.remove('hidden');
-            document.getElementById('taskModalTitle').innerHTML = '<i class="fa-solid fa-edit mr-2"></i>修改任务';
+            document.getElementById('taskModalTitle').innerHTML = '编辑任务';
             document.getElementById('taskTitle').value = task.title;
             document.getElementById('taskDate').value = task.date;
             
@@ -1510,7 +1395,7 @@
             const input = document.getElementById('quickIndependentInput');
             const title = input.value.trim();
             if (title) {
-                addTaskData(title, getTodayStr(), null); 
+                addTaskData(title, getTodayStr(), null);
                 input.value = '';
             }
         }
@@ -1518,20 +1403,21 @@
         function openAddTaskModal() {
             editingTaskId = null;
             document.getElementById('taskModal').classList.remove('hidden');
-            document.getElementById('taskModalTitle').innerHTML = '<i class="fa-solid fa-tasks mr-2"></i>新建任务';
+            document.getElementById('taskModalTitle').innerHTML = '新建任务';
             document.getElementById('taskTitle').value = '';
             document.getElementById('taskDate').value = getTodayStr();
             
             document.getElementById('btnDeleteTask').classList.add('hidden');
             document.getElementById('taskRepeatSection').classList.remove('hidden');
             document.getElementById('taskRepeatToggle').checked = false;
-            toggleRepeatMode(); 
+            toggleRepeatMode();
             document.getElementById('taskEndDate').value = '';
 
             document.getElementById('taskGoalSelectModal').value = '';
             renderTaskPresets();
             setTaskColor('');
             updateTaskGoalSelect();
+            setTimeout(() => document.getElementById('taskTitle').focus(), 100);
         }
 
         function toggleRepeatMode() {
@@ -1550,37 +1436,28 @@
 
             const defaultBtn = document.createElement('button');
             defaultBtn.type = 'button';
-            defaultBtn.className = 'w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center hover:border-gray-400 transition';
-            defaultBtn.title = '默认主题色';
+            defaultBtn.className = 'w-6 h-6 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition';
+            defaultBtn.title = '默认';
             defaultBtn.onclick = () => setTaskColor('');
-            defaultBtn.innerHTML = '<i class="fa-solid fa-palette text-gray-400 text-xs"></i>';
+            defaultBtn.innerHTML = '<i class="fa-solid fa-ban text-gray-400 text-[10px]"></i>';
             container.appendChild(defaultBtn);
-
-            // 2. 还原：莫兰迪色系
-            if (!data.settings.taskPresets || data.settings.taskPresets.length === 0) {
-                data.settings.taskPresets = ["#81ad62", "#84b1ca", "#f0c035", "#e294b3", "#b7aad8"];
-            }
             
             data.settings.taskPresets.forEach((color, index) => {
                 const wrapper = document.createElement('div');
                 wrapper.className = 'relative w-6 h-6';
-
                 const btn = document.createElement('button');
                 btn.type = 'button';
-                btn.className = 'w-6 h-6 rounded-full transform hover:scale-110 transition';
+                btn.className = 'w-6 h-6 rounded-full transform hover:scale-110 transition border border-gray-200';
                 btn.style.backgroundColor = color;
-                
                 btn.onclick = () => setTaskColor(color);
-                
                 wrapper.appendChild(btn);
                 container.appendChild(wrapper);
             });
-
             const customWrapper = document.createElement('div');
-            customWrapper.className = 'relative w-8 h-8 rounded bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition';
+            customWrapper.className = 'relative w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition border border-gray-300';
             customWrapper.innerHTML = `
-                <i class="fa-solid fa-eye-dropper text-gray-500 text-xs pointer-events-none"></i>
-                <input type="color" id="taskColorPicker" class="absolute inset-0 opacity-0 w-full h-full cursor-pointer" onchange="setTaskColor(this.value)" title="自选颜色">
+                <i class="fa-solid fa-eye-dropper text-gray-500 text-[10px] pointer-events-none"></i>
+                <input type="color" id="taskColorPicker" class="absolute inset-0 opacity-0 w-full h-full cursor-pointer" onchange="setTaskColor(this.value)" title="自定义颜色">
             `;
             container.appendChild(customWrapper);
         }
@@ -1588,10 +1465,6 @@
         function renderSettingsPresets() {
             const container = document.getElementById('settingsPresetContainer');
             container.innerHTML = '';
-             if (!data.settings.taskPresets || data.settings.taskPresets.length === 0) {
-                 data.settings.taskPresets = ["#81ad62", "#84b1ca", "#f0c035", "#e294b3", "#b7aad8"];
-             }
-             
              data.settings.taskPresets.forEach((color, index) => {
                  const wrapper = document.createElement('div');
                  wrapper.className = 'flex flex-col items-center';
@@ -1613,13 +1486,13 @@
                 slot.className = `scheme-slot ${scheme ? 'filled' : ''}`;
                 
                 if (scheme) {
-                    slot.style.setProperty('--slot-theme', scheme.theme);
-                    slot.style.setProperty('--slot-bg', scheme.bg);
-                    slot.title = "点击应用此方案";
+                    slot.style.backgroundColor = scheme.bg;
+                    slot.style.borderColor = scheme.theme;
+                    slot.title = "应用此方案";
                     slot.onclick = () => loadCustomScheme(index);
                     
                     const clearBtn = document.createElement('div');
-                    clearBtn.className = 'scheme-clear';
+                    clearBtn.className = 'absolute -top-1 -right-1 bg-white border rounded-full w-4 h-4 flex items-center justify-center shadow text-red-500 text-[8px]';
                     clearBtn.innerHTML = '<i class="fa-solid fa-times"></i>';
                     clearBtn.onclick = (e) => {
                         e.stopPropagation();
@@ -1627,10 +1500,10 @@
                     };
                     slot.appendChild(clearBtn);
                 } else {
-                    slot.title = "点击保存当前配色";
+                    slot.title = "保存当前方案";
                     slot.onclick = () => saveCustomScheme(index);
+                    slot.innerHTML = '<i class="fa-solid fa-plus text-gray-300 text-xs"></i>';
                 }
-                
                 container.appendChild(slot);
             });
         }
@@ -1638,11 +1511,7 @@
         function saveCustomScheme(index) {
             const currentTheme = document.getElementById('themeColorPicker').value;
             const currentBg = document.getElementById('bgColorPicker').value;
-            
-            data.settings.customSchemes[index] = {
-                theme: currentTheme,
-                bg: currentBg
-            };
+            data.settings.customSchemes[index] = { theme: currentTheme, bg: currentBg };
             renderCustomSchemes();
         }
 
@@ -1662,18 +1531,8 @@
 
         function setTaskColor(color) {
             document.getElementById('taskColor').value = color;
-            const preview = document.getElementById('taskColorPreview');
-            
             const picker = document.getElementById('taskColorPicker');
             if (picker && color) picker.value = color;
-            
-            if (color) {
-                preview.textContent = '自定义颜色';
-                preview.style.color = color;
-            } else {
-                preview.textContent = '默认主题色';
-                preview.style.color = '#6b7280';
-            }
         }
 
         function saveTaskFromModal() {
@@ -1687,10 +1546,7 @@
             if (!title) { alert('请输入任务名称'); return; }
             if (!date) { alert('请选择日期'); return; }
             
-            // 立即关闭弹窗
             closeModal('taskModal');
-
-            // 异步处理数据保存和渲染
             setTimeout(() => {
                 if (editingTaskId) {
                     const task = data.subtasks.find(s => s.id === editingTaskId);
@@ -1699,7 +1555,7 @@
                         task.date = date;
                         task.goalId = goalId;
                         task.color = color;
-                        refreshViews(); // 1. 统一刷新
+                        refreshViews(); 
                     }
                     editingTaskId = null;
                 } else {
@@ -1720,7 +1576,7 @@
                             });
                             loopDate.setDate(loopDate.getDate() + 1);
                         }
-                        refreshViews(); // 1. 统一刷新
+                        refreshViews();
                     } else {
                         addTaskData(title, date, goalId, color);
                     }
@@ -1748,7 +1604,7 @@
             const targetGoalId = goalId || currentGoalId || '';
             editingTaskId = null;
             document.getElementById('taskModal').classList.remove('hidden');
-            document.getElementById('taskModalTitle').innerHTML = '<i class="fa-solid fa-tasks mr-2"></i>新建任务';
+            document.getElementById('taskModalTitle').innerHTML = '新建任务';
             document.getElementById('taskTitle').value = '';
             document.getElementById('taskDate').value = dateStr;
             document.getElementById('btnDeleteTask').classList.add('hidden');
@@ -1760,9 +1616,9 @@
             renderTaskPresets();
             document.getElementById('taskGoalSelectModal').value = targetGoalId;
             setTaskColor('');
+            setTimeout(() => document.getElementById('taskTitle').focus(), 100);
         }
 
-        // 1. 修复：统一刷新
         function addTaskData(title, dateStr, goalId, color) {
             data.subtasks.push({ id: Date.now() + '', title, date: dateStr, goalId: goalId, completed: false, color: color || '' });
             refreshViews();
@@ -1786,35 +1642,32 @@
             const activeGoals = data.goals.filter(g => !g.completed).length;
             const totalTasks = data.subtasks.length;
             const completedTasks = data.subtasks.filter(t => t.completed).length;
-            
             document.getElementById('statTotalGoals').innerText = totalGoals;
             document.getElementById('statActiveGoals').innerText = activeGoals;
             document.getElementById('statTotalTasks').innerText = totalTasks;
             document.getElementById('statCompletionRate').innerText = (totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0) + '%';
-            
             const categoryCounts = {};
             data.goals.filter(g => !g.completed).forEach(g => categoryCounts[g.category] = (categoryCounts[g.category] || 0) + 1);
-            document.getElementById('categoryStats').innerHTML = Object.entries(categoryCounts).length ? Object.entries(categoryCounts).map(([cat, count]) => `
+            document.getElementById('categoryStats').innerHTML = Object.entries(categoryCounts).length ?
+                Object.entries(categoryCounts).map(([cat, count]) => `
                 <div class="flex justify-between items-center py-2 border-b border-gray-200">
-                    <span class="theme-tag">${cat}</span><span class="font-bold text-gray-700">${count} 个目标</span>
+                    <span class="theme-tag">${cat}</span><span class="font-bold text-gray-700">${count}</span>
                 </div>`).join('') : '<div class="text-center text-gray-400 py-2">暂无数据</div>';
-                
             const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
             const recent = data.subtasks.filter(t => t.completed && parseInt(t.id) > sevenDaysAgo.getTime()).length;
             document.getElementById('recentCompletions').innerHTML = recent > 0 ? 
-                `<div class="text-4xl font-bold theme-text">${recent}</div><div class="text-sm text-gray-500 mt-2">继续保持！💪</div>` : 
-                '<div class="text-gray-400">最近7天暂无完成记录</div>';
+                `<div class="text-4xl font-bold theme-text">${recent}</div><div class="text-xs text-gray-500 mt-2">本周完成</div>` : 
+                '<div class="text-gray-400">本周暂无完成任务</div>';
         }
-
 
         function openSettings() {
             document.getElementById('settingsModal').classList.remove('hidden');
             document.getElementById('themeColorPicker').value = data.settings.theme;
-            document.getElementById('bgColorPicker').value = data.settings.bgColor || '#f3f6f3';
-            document.getElementById('glassOpacityPicker').value = data.settings.glassOpacity;
-            document.getElementById('imgOpacityPicker').value = data.settings.imgOpacity || 0.5;
+            document.getElementById('bgColorPicker').value = data.settings.bgColor || '#F9F7F3';
+            // 兼容性保留
+            document.getElementById('glassOpacityPicker').value = 1;
+            document.getElementById('imgOpacityPicker').value = 1;
             document.getElementById('categoriesInput').value = data.categories.join(', ');
-            
             renderSettingsPresets();
             renderCustomSchemes();
         }
@@ -1839,10 +1692,11 @@
         function saveSettings() {
             data.settings.theme = document.getElementById('themeColorPicker').value;
             data.settings.bgColor = document.getElementById('bgColorPicker').value;
-            data.settings.glassOpacity = document.getElementById('glassOpacityPicker').value;
-            data.settings.imgOpacity = document.getElementById('imgOpacityPicker').value;
+            // 固定为不透明
+            data.settings.glassOpacity = 1;
+            data.settings.imgOpacity = 1;
             data.categories = document.getElementById('categoriesInput').value.split(/[,，]/).map(s => s.trim()).filter(s => s);
-            if (data.categories.length === 0) data.categories = ['工作', '学习', '生活', '健康'];
+            if (data.categories.length === 0) data.categories = ['工作', '生活', '学习', '健康'];
             
             const newPresets = [];
             for(let i=0; i<5; i++) {
@@ -1859,22 +1713,36 @@
             const bgColor = document.getElementById('bgColorPicker').value; 
             
             document.documentElement.style.setProperty('--theme-color', color);
-            document.documentElement.style.setProperty('--theme-light', `rgba(${hexToRgb(color)}, 0.1)`);
+            document.documentElement.style.setProperty('--theme-light', `rgba(${hexToRgb(color)}, 0.15)`); // 稍微增加不透明度
+            document.documentElement.style.setProperty('--theme-hover', `rgba(${hexToRgb(color)}, 0.05)`);
             document.documentElement.style.setProperty('--bg-color', bgColor);
             
-            document.documentElement.style.setProperty('--glass-opacity', document.getElementById('glassOpacityPicker').value);
-            document.documentElement.style.setProperty('--img-opacity', document.getElementById('imgOpacityPicker').value);
-            document.documentElement.style.setProperty('--bg-image', data.settings.bg ? `url('${data.settings.bg}')` : 'none');
+            // 强制覆盖，不使用透明度
+            document.documentElement.style.setProperty('--glass-opacity', 1);
+            document.documentElement.style.setProperty('--img-opacity', 1);
+            if (data.settings.bg) {
+                 document.documentElement.style.setProperty('--bg-image', `url('${data.settings.bg}')`);
+                 document.getElementById('bg-layer').style.display = 'block';
+            } else {
+                 document.documentElement.style.setProperty('--bg-image', 'none');
+                 document.getElementById('bg-layer').style.display = 'none';
+            }
         }
 
         function applyStyles() {
             document.documentElement.style.setProperty('--theme-color', data.settings.theme);
-            document.documentElement.style.setProperty('--theme-light', `rgba(${hexToRgb(data.settings.theme)}, 0.1)`);
-            document.documentElement.style.setProperty('--bg-color', data.settings.bgColor || '#f3f6f3');
+            document.documentElement.style.setProperty('--theme-light', `rgba(${hexToRgb(data.settings.theme)}, 0.15)`);
+            document.documentElement.style.setProperty('--theme-hover', `rgba(${hexToRgb(data.settings.theme)}, 0.05)`);
+            document.documentElement.style.setProperty('--bg-color', data.settings.bgColor || '#F9F7F3');
             
-            document.documentElement.style.setProperty('--glass-opacity', data.settings.glassOpacity);
-            document.documentElement.style.setProperty('--img-opacity', data.settings.imgOpacity);
-            if (data.settings.bg) document.documentElement.style.setProperty('--bg-image', `url('${data.settings.bg}')`);
+            document.documentElement.style.setProperty('--glass-opacity', 1);
+            document.documentElement.style.setProperty('--img-opacity', 1);
+            if (data.settings.bg) {
+                document.documentElement.style.setProperty('--bg-image', `url('${data.settings.bg}')`);
+                document.getElementById('bg-layer').style.display = 'block';
+            } else {
+                document.getElementById('bg-layer').style.display = 'none';
+            }
         }
 
         function toggleSection(wrapperId, iconId, btnId) {
@@ -1882,39 +1750,35 @@
             const icon = document.getElementById(iconId);
             const btn = btnId ? document.getElementById(btnId) : null;
             const parentPanel = wrapper.closest('.glass-panel');
-            
             if (wrapper.classList.contains('collapsed')) {
                 wrapper.classList.remove('collapsed');
                 icon.style.transform = 'rotate(0deg)';
-                if (btn) btn.classList.remove('hidden-visually');
-                if (parentPanel) parentPanel.classList.remove('is-collapsed');
+                if (btn) btn.style.display = 'flex';
             } else {
                 wrapper.classList.add('collapsed');
                 icon.style.transform = 'rotate(-90deg)';
-                if (btn) btn.classList.add('hidden-visually');
-                if (parentPanel) parentPanel.classList.add('is-collapsed');
+                if (btn) btn.style.display = 'none';
             }
         }
 
         function updateHeaderDate() {
             const now = new Date();
-            document.getElementById('headerDate').innerText = now.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+            // 中文日期格式
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('headerDate').innerText = now.toLocaleDateString('zh-CN', options);
         }
 
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-        // 2. 升级版本 v16
         function saveData() { localStorage.setItem('dailyPlannerPro_v16', JSON.stringify(data)); }
-        function showDayDetail(dateStr) {
-            const goals = data.goals.filter(g => g.ddl === dateStr && !g.completed);
-            if (goals.length > 0) alert(`${dateStr} 有 ${goals.length} 个截止目标:\n${goals.map(g => '• ' + g.title).join('\n')}`);
-        }
+        
+        function showDayDetail(dateStr) { }
         
         function saveAppTitle() {
             const titleEl = document.getElementById('appTitle');
             const newTitle = titleEl.innerText.trim();
             if (!newTitle) {
-                titleEl.innerText = 'My Planner';
-                data.settings.appTitle = 'My Planner';
+                titleEl.innerText = '我的计划';
+                data.settings.appTitle = '我的计划';
             } else {
                 data.settings.appTitle = newTitle;
             }
@@ -1923,7 +1787,7 @@
 
         function handleTitleKeydown(e) {
             if (e.key === 'Enter') {
-                e.preventDefault(); 
+                e.preventDefault();
                 document.getElementById('appTitle').blur(); 
             }
         }
@@ -1942,14 +1806,11 @@
             URL.revokeObjectURL(url);
         }
 
-        function triggerImport() {
-            document.getElementById('importFileInput').click();
-        }
+        function triggerImport() { document.getElementById('importFileInput').click(); }
 
         function importData(input) {
             const file = input.files[0];
             if (!file) return;
-            
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
@@ -1958,11 +1819,10 @@
                         alert('文件格式错误：这不是 My Planner 的备份文件。');
                         return;
                     }
-                    
                     if (confirm('导入将覆盖当前的全部数据，确定要继续吗？')) {
                         data = importedData;
                         if (!data.settings) data.settings = {};
-                        if (!data.settings.taskPresets) data.settings.taskPresets = ["#81ad62", "#84b1ca", "#f0c035", "#e294b3", "#b7aad8"];
+                        if (!data.settings.taskPresets) data.settings.taskPresets = ["#D3E5EF", "#E8DEEE", "#FDECC8", "#F4E0E9", "#DBEDDB"];
                         if (!data.settings.customSchemes) data.settings.customSchemes = [null, null, null];
                         
                         saveData();
