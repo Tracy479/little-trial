@@ -266,12 +266,12 @@
             text-align: left;
             padding: 2px 6px; 
             border-radius: 4px; 
-            font-weight: 600; /* 加粗一点 */
+            font-weight: 600; 
             width: 100%;
             overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
 
-        /* 修改：日历任务标签保持全色块填充 */
+        /* 修改：日历任务标签改为全色块填充 */
         .cal-task-item {
             color: var(--text-main); 
             padding: 2px 6px; 
@@ -381,7 +381,7 @@
                     class="font-bold tracking-tight outline-none cursor-text transition-all min-w-[100px]" 
                     onblur="saveAppTitle()"
                     onkeydown="handleTitleKeydown(event)">
-                    我的计划
+                    My Planner
                 </h1>
                 <p class="text-sm mt-0.5" id="headerDate">加载中...</p>
             </div>
@@ -700,7 +700,7 @@
                 imgOpacity: 1,
                 bg: '',
                 bgColor: '#F9F7F3', 
-                appTitle: '我的计划', 
+                appTitle: 'My Planner', 
                 taskPresets: ["#D3E5EF", "#E8DEEE", "#FDECC8", "#F4E0E9", "#DBEDDB"],
                 customSchemes: [null, null, null] 
             }
@@ -1777,8 +1777,8 @@
             const titleEl = document.getElementById('appTitle');
             const newTitle = titleEl.innerText.trim();
             if (!newTitle) {
-                titleEl.innerText = '我的计划';
-                data.settings.appTitle = '我的计划';
+                titleEl.innerText = 'My Planner';
+                data.settings.appTitle = 'My Planner';
             } else {
                 data.settings.appTitle = newTitle;
             }
