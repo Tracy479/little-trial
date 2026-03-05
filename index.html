@@ -1088,7 +1088,7 @@
 
         function renderRangeSegmentsHtml(segments, goalIdForOpen) {
             if (!segments || segments.length === 0) return '';
-            const RANGE_TOP_OFFSET = 24;
+            const RANGE_TOP_OFFSET = 32;
             const RANGE_LANE_HEIGHT = 24;
             return segments.map((seg) => {
                 const isDone = seg.doneCount === seg.totalDays;
