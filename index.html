@@ -322,6 +322,18 @@
             gap: 4px;
             overflow: hidden;
         }
+        .calendar-day-number {
+            display: block;
+            width: 100%;
+            min-height: 20px;
+            line-height: 16px;
+            margin-bottom: 4px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #6B7280;
+            position: relative;
+            z-index: 10;
+        }
         
         .countdown-badge-classic {
             position: absolute; top: 4px; right: 4px;
@@ -1195,13 +1207,13 @@
                     const segments = (rangeView && rangeView.startSegmentsByDate.get(dateStr)) || [];
                     const rangeHtml = renderRangeSegmentsHtml(segments, '');
                     const laneRowsForDay = (rangeView && rangeView.laneRowsByDate.get(dateStr)) || 0;
-                    const spacerHeight = laneRowsForDay > 0 ? Math.max(0, laneRowsForDay * 24 - 4) : 0;
+                    const spacerHeight = laneRowsForDay > 0 ? laneRowsForDay * 24 : 0;
                     const spacerHtml = spacerHeight ? `<div style="height:${spacerHeight}px"></div>` : '';
 
                     const taskHtml = renderStandaloneTaskHtml(standaloneTasks);
                     container.innerHTML += `
                         <div class="calendar-day ${isToday ? 'cal-today' : ''}" onclick="openDayTodoModal('${dateStr}', '')">
-                            <span class="font-bold text-gray-500 z-10 block mb-1 text-xs">${loop.getDate()}</span>
+                            <span class="calendar-day-number">${loop.getDate()}</span>
                             ${rangeHtml}
                             ${spacerHtml}
                             <div class="calendar-task-stack">
@@ -1214,7 +1226,7 @@
                     
                     const isDDL = goal.ddl === dateStr;
                     const diff = Math.ceil((parseDateStr(goal.ddl) - loop) / 86400000);
-                    let html = `<span class="font-bold text-gray-500 z-10 text-xs">${loop.getDate()}</span>`;
+                    let html = `<span class="calendar-day-number">${loop.getDate()}</span>`;
                     
                     if (goal && loop <= parseDateStr(goal.ddl) && loop >= parseDateStr(getTodayStr()) && !isDDL) {
                         let badgeClass = 'badge-normal';
@@ -1224,7 +1236,7 @@
                     }
                     
                     if (isDDL) {
-                        html = `<span class="date-circle-red z-10">${loop.getDate()}</span>`;
+                        html = `<span class="calendar-day-number date-circle-red">${loop.getDate()}</span>`;
                     }
                     
                     const tasks = data.subtasks.filter(s => s.goalId === activeFilter && s.date === dateStr);
@@ -1233,7 +1245,7 @@
                     const segments = (rangeView && rangeView.startSegmentsByDate.get(dateStr)) || [];
                     const rangeHtml = renderRangeSegmentsHtml(segments, activeFilter);
                     const laneRowsForDay = (rangeView && rangeView.laneRowsByDate.get(dateStr)) || 0;
-                    const spacerHeight = laneRowsForDay > 0 ? Math.max(0, laneRowsForDay * 24 - 4) : 0;
+                    const spacerHeight = laneRowsForDay > 0 ? laneRowsForDay * 24 : 0;
                     const spacerHtml = spacerHeight ? `<div style="height:${spacerHeight}px"></div>` : '';
                     const taskHtml = renderStandaloneTaskHtml(standaloneTasks);
 
