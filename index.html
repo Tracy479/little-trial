@@ -268,43 +268,82 @@
             border-radius: 4px; 
             font-weight: 600; 
             width: 100%;
-            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
+        .cal-goal-title {
+            min-width: 0;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .goal-ddl-badge {
+            flex-shrink: 0;
+            font-size: 9px;
+            font-weight: 700;
+            line-height: 1;
+            padding: 2px 4px;
+            border-radius: 3px;
+            background: rgba(120, 119, 116, 0.15);
+            color: #787774;
+        }
+        .goal-ddl-badge.urgent { background: #FFE8CC; color: #D9730D; }
+        .goal-ddl-badge.overdue { background: #FFDCDD; color: #D44C47; }
 
         /* 修改：日历任务标签改为全色块填充 */
         .cal-task-item {
             color: var(--text-main); 
-            padding: 2px 6px; 
+            padding: 0 6px;
             border-radius: 4px; 
-            margin-top: 2px; 
+            margin-top: 0; 
             font-size: 11px; 
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
             width: 100%; max-width: 100%; 
             transition: all 0.2s;
-            position: relative; text-align: left;
+            position: relative;
+            text-align: left;
             border: none; 
+            min-height: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            box-sizing: border-box;
         }
         .cal-task-item.done { opacity: 0.5; text-decoration: line-through; }
 
         .cal-range-chip {
             position: absolute;
             left: 6px;
-            height: 14px;
-            line-height: 14px;
+            height: 20px;
             border-radius: 4px;
-            font-size: 10px;
+            font-size: 11px;
             padding: 0 6px;
             color: var(--text-main);
             z-index: 4;
             display: flex;
             align-items: center;
-            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+            gap: 4px;
+            box-shadow: none;
             overflow: hidden;
             white-space: nowrap;
+            box-sizing: border-box;
         }
         .cal-range-chip.done {
             opacity: 0.55;
             text-decoration: line-through;
+        }
+        .calendar-task-stack {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            overflow: hidden;
         }
         
         .countdown-badge-classic {
@@ -954,6 +993,8 @@
 
             const startSegmentsByDate = new Map();
             const hiddenTaskIdsByDate = new Map();
+            const laneRowsByDate = new Map();
+            const allSegments = [];
 
             grouped.forEach(taskList => {
                 taskList.sort((a, b) => {
@@ -1006,9 +1047,7 @@
                                 goalId: run[0].goalId || '',
                                 color: run[0].color || 'rgba(0,0,0,0.04)'
                             };
-
-                            if (!startSegmentsByDate.has(segStart)) startSegmentsByDate.set(segStart, []);
-                            startSegmentsByDate.get(segStart).push(seg);
+                            allSegments.push(seg);
 
                             segStart = addDaysToDateStr(segStart, spanDays);
                         }
@@ -1018,12 +1057,51 @@
                 }
             });
 
-            return { startSegmentsByDate, hiddenTaskIdsByDate };
+            const getWeekRowKey = (dateStr) => {
+                const d = parseDateStr(dateStr);
+                d.setDate(d.getDate() - d.getDay());
+                return formatDateToISO(d);
+            };
+
+            const laneStateByWeek = new Map();
+            allSegments.sort((a, b) => {
+                if (a.startDate === b.startDate) return a.endDate.localeCompare(b.endDate);
+                return a.startDate.localeCompare(b.startDate);
+            });
+
+            allSegments.forEach(seg => {
+                const rowKey = getWeekRowKey(seg.startDate);
+                if (!laneStateByWeek.has(rowKey)) laneStateByWeek.set(rowKey, []);
+                const laneEndDates = laneStateByWeek.get(rowKey);
+
+                let lane = laneEndDates.findIndex(endDate => endDate < seg.startDate);
+                if (lane === -1) {
+                    lane = laneEndDates.length;
+                    laneEndDates.push(seg.endDate);
+                } else {
+                    laneEndDates[lane] = seg.endDate;
+                }
+
+                seg.lane = lane;
+                if (!startSegmentsByDate.has(seg.startDate)) startSegmentsByDate.set(seg.startDate, []);
+                startSegmentsByDate.get(seg.startDate).push(seg);
+
+                let dayCursor = seg.startDate;
+                while (dayCursor <= seg.endDate) {
+                    const prevRows = laneRowsByDate.get(dayCursor) || 0;
+                    laneRowsByDate.set(dayCursor, Math.max(prevRows, lane + 1));
+                    dayCursor = addDaysToDateStr(dayCursor, 1);
+                }
+            });
+
+            return { startSegmentsByDate, hiddenTaskIdsByDate, laneRowsByDate };
         }
 
         function renderRangeSegmentsHtml(segments, goalIdForOpen) {
             if (!segments || segments.length === 0) return '';
-            return segments.map((seg, idx) => {
+            const RANGE_TOP_OFFSET = 24;
+            const RANGE_LANE_HEIGHT = 24;
+            return segments.map((seg) => {
                 const isDone = seg.doneCount === seg.totalDays;
                 const segEndOffset = seg.dayOffset + seg.spanDays - 1;
                 const progressSuffix = seg.totalDays > 14 ? ` · Day ${seg.dayOffset}-${segEndOffset}/${seg.totalDays}` : '';
@@ -1031,7 +1109,7 @@
                 const targetGoalId = goalIdForOpen || seg.goalId || '';
                 return `
                     <div class="cal-range-chip ${isDone ? 'done' : ''}"
-                         style="top: ${24 + idx * 16}px; width: calc(${seg.spanDays * 100}% - 12px); background-color: ${seg.color};"
+                         style="top: ${RANGE_TOP_OFFSET + seg.lane * RANGE_LANE_HEIGHT}px; width: calc(${seg.spanDays * 100}% - 12px); background-color: ${seg.color};"
                          title="${seg.title} (${seg.startDate} → ${seg.endDate})"
                          onclick="event.stopPropagation(); openDayTodoModal('${seg.startDate}', '${targetGoalId}');">
                         ${doneMark}<span class="truncate">${seg.title}${progressSuffix}</span>
@@ -1047,7 +1125,7 @@
                          style="background-color: ${bg}; cursor: pointer;" 
                          onclick="event.stopPropagation(); editTask('${t.id}');"
                          title="${t.title}">
-                         ${t.completed ? '<i class="fa-solid fa-check mr-1 text-[9px]"></i>' : ''}${t.title}
+                         ${t.completed ? '<i class="fa-solid fa-check text-[9px]"></i>' : ''}<span class="truncate">${t.title}</span>
                     </div>`;
             }).join('');
         }
@@ -1115,9 +1193,17 @@
                     const goalsToday = data.goals.filter(g => g.ddl === dateStr && !g.completed);
                     let content = `<span class="relative z-10 ${goalsToday.length > 0 ? 'date-highlight-theme' : ''}">${loop.getDate()}</span>`;
                     if (goalsToday.length > 0) {
+                        const todayBase = parseDateStr(getTodayStr());
                         content += `<div class="flex flex-col gap-1 mt-1 w-full">`;
                         goalsToday.forEach(g => {
-                            content += `<div class="cal-goal-tag truncate" title="${g.title}">${g.title}</div>`;
+                            const diffToGoal = Math.ceil((parseDateStr(g.ddl) - todayBase) / 86400000);
+                            const badgeClass = diffToGoal < 0 ? 'overdue' : (diffToGoal <= 3 ? 'urgent' : '');
+                            const badgeText = diffToGoal < 0 ? `${Math.abs(diffToGoal)}d+` : `${diffToGoal}d`;
+                            content += `
+                                <div class="cal-goal-tag" title="${g.title}">
+                                    <span class="cal-goal-title">${g.title}</span>
+                                    <span class="goal-ddl-badge ${badgeClass}">${badgeText}</span>
+                                </div>`;
                         });
                         content += `</div>`;
                     }
@@ -1129,7 +1215,9 @@
                     const standaloneTasks = tasks.filter(t => !hiddenSet.has(String(t.id)));
                     const segments = (rangeView && rangeView.startSegmentsByDate.get(dateStr)) || [];
                     const rangeHtml = renderRangeSegmentsHtml(segments, '');
-                    const spacerHtml = segments.length ? `<div style="height:${segments.length * 16 + 4}px"></div>` : '';
+                    const laneRowsForDay = (rangeView && rangeView.laneRowsByDate.get(dateStr)) || 0;
+                    const spacerHeight = laneRowsForDay > 0 ? Math.max(0, laneRowsForDay * 24 - 4) : 0;
+                    const spacerHtml = spacerHeight ? `<div style="height:${spacerHeight}px"></div>` : '';
 
                     const taskHtml = renderStandaloneTaskHtml(standaloneTasks);
                     container.innerHTML += `
@@ -1137,7 +1225,7 @@
                             <span class="font-bold text-gray-500 z-10 block mb-1 text-xs">${loop.getDate()}</span>
                             ${rangeHtml}
                             ${spacerHtml}
-                            <div class="w-full flex flex-col overflow-hidden">
+                            <div class="calendar-task-stack">
                                 ${taskHtml}
                             </div>
                         </div>`;
@@ -1165,10 +1253,12 @@
                     const standaloneTasks = tasks.filter(t => !hiddenSet.has(String(t.id)));
                     const segments = (rangeView && rangeView.startSegmentsByDate.get(dateStr)) || [];
                     const rangeHtml = renderRangeSegmentsHtml(segments, activeFilter);
-                    const spacerHtml = segments.length ? `<div style="height:${segments.length * 16 + 4}px"></div>` : '';
+                    const laneRowsForDay = (rangeView && rangeView.laneRowsByDate.get(dateStr)) || 0;
+                    const spacerHeight = laneRowsForDay > 0 ? Math.max(0, laneRowsForDay * 24 - 4) : 0;
+                    const spacerHtml = spacerHeight ? `<div style="height:${spacerHeight}px"></div>` : '';
                     const taskHtml = renderStandaloneTaskHtml(standaloneTasks);
 
-                    container.innerHTML += `<div class="calendar-day ${isToday ? 'cal-today' : ''}" onclick="openDayTodoModal('${dateStr}', '${activeFilter}')">${html}${rangeHtml}${spacerHtml}<div class="w-full flex flex-col items-center mt-1">${taskHtml}</div></div>`;
+                    container.innerHTML += `<div class="calendar-day ${isToday ? 'cal-today' : ''}" onclick="openDayTodoModal('${dateStr}', '${activeFilter}')">${html}${rangeHtml}${spacerHtml}<div class="calendar-task-stack">${taskHtml}</div></div>`;
                 }
                 
                 loop.setDate(loop.getDate() + 1);
