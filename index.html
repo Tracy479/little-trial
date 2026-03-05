@@ -244,7 +244,6 @@
         .cal-today span {
             color: var(--theme-color);
             font-weight: bold;
-            border-bottom: 2px solid var(--theme-color);
         }
         
         .date-highlight-theme { color: var(--theme-color); font-weight: 800; font-size: 1.1em; }
@@ -268,30 +267,8 @@
             border-radius: 4px; 
             font-weight: 600; 
             width: 100%;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            gap: 6px;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
-        .cal-goal-title {
-            min-width: 0;
-            flex: 1;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        .goal-ddl-badge {
-            flex-shrink: 0;
-            font-size: 9px;
-            font-weight: 700;
-            line-height: 1;
-            padding: 2px 4px;
-            border-radius: 3px;
-            background: rgba(120, 119, 116, 0.15);
-            color: #787774;
-        }
-        .goal-ddl-badge.urgent { background: #FFE8CC; color: #D9730D; }
-        .goal-ddl-badge.overdue { background: #FFDCDD; color: #D44C47; }
 
         /* 修改：日历任务标签改为全色块填充 */
         .cal-task-item {
@@ -1194,16 +1171,18 @@
                     let content = `<span class="relative z-10 ${goalsToday.length > 0 ? 'date-highlight-theme' : ''}">${loop.getDate()}</span>`;
                     if (goalsToday.length > 0) {
                         const todayBase = parseDateStr(getTodayStr());
+                        content += goalsToday.map((g, idx) => {
+                            const diffToGoal = Math.ceil((parseDateStr(g.ddl) - todayBase) / 86400000);
+                            let badgeClass = 'badge-normal';
+                            if (diffToGoal < 0 || diffToGoal <= 3) badgeClass = 'badge-urgent';
+                            else if (diffToGoal <= 7) badgeClass = 'badge-warning';
+                            const badgeText = diffToGoal < 0 ? `${Math.abs(diffToGoal)}d+` : `${diffToGoal}d`;
+                            return `<div class="countdown-badge-classic ${badgeClass}" style="top:${4 + idx * 14}px;">${badgeText}</div>`;
+                        }).join('');
+
                         content += `<div class="flex flex-col gap-1 mt-1 w-full">`;
                         goalsToday.forEach(g => {
-                            const diffToGoal = Math.ceil((parseDateStr(g.ddl) - todayBase) / 86400000);
-                            const badgeClass = diffToGoal < 0 ? 'overdue' : (diffToGoal <= 3 ? 'urgent' : '');
-                            const badgeText = diffToGoal < 0 ? `${Math.abs(diffToGoal)}d+` : `${diffToGoal}d`;
-                            content += `
-                                <div class="cal-goal-tag" title="${g.title}">
-                                    <span class="cal-goal-title">${g.title}</span>
-                                    <span class="goal-ddl-badge ${badgeClass}">${badgeText}</span>
-                                </div>`;
+                            content += `<div class="cal-goal-tag truncate" title="${g.title}">${g.title}</div>`;
                         });
                         content += `</div>`;
                     }
