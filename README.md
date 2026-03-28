@@ -1,113 +1,87 @@
 # My Planner
 
-A static personal planning web app for goals, tasks, and calendar-based scheduling.
+一个已经部署上线的静态个人规划网页，围绕“目标、待办事项、截止日期”来组织日常任务。
 
-`little-trial` is the repository name. `My Planner` is the product-facing name used in the app UI.
+## 项目简介
 
-## 项目简介 / Overview
+My Planner 是我自己做的一个静态网页项目，主要用来管理个人目标和待办事项。
+项目整体是纯前端实现，不依赖后端服务，仓库里保留的是静态页面源码。
 
-这是一个纯前端的个人规划工具，适合用来管理目标、每日待办和截止日期。
-它不依赖后端，也不需要安装，直接打开 `index.html` 就可以使用。
+这个项目的核心不是做一套复杂的生产力系统，而是把我自己真正会用到的规划流程整理得更直观、更顺手：
 
-This is a fully static personal planning tool for managing goals, daily tasks, and deadlines.
-It has no backend dependency and no install step. You can open `index.html` directly in a browser and start using it.
+- 看板里集中处理目标、待办和已完成事项
+- 日历里直观看到每个目标和任务的分布
+- 对有截止日期的目标，给出从当天到截止日的逐日倒计时
 
-## 截图 / Screenshots
+## 界面结构
 
-### Calendar View
+### 1. 看板视图
+
+- 目标：管理长期或阶段性的事项
+- 待办事项：既可以单独存在，也可以和具体目标关联
+- 已完成：查看已经完成的任务记录
+
+### 2. 日历视图
+
+- 以日历形式查看当前有哪些目标和任务
+- 目标带有明确的截止时间
+- 点击具体目标后，可以看到从当前日期到截止日期之间，每一天对应的倒计时
+
+## 这个项目里我认为比较特别的部分
+
+和常见的待办工具相比，My Planner 最有辨识度的功能，是把“目标截止时间”做成了按天展开的倒计时展示。
+
+我希望它不是只告诉用户“还剩几天”，而是能在日历里连续地看到从今天到截止日那一天的时间推进，这样会比单纯的截止日期提示更有压迫感，也更适合做中短期目标的节奏管理。
+
+除这一点之外，项目的其他部分会更接近常规的个人待办和规划工具，重点在于清晰、直接、好用。
+
+## 技术实现
+
+- 单文件应用，核心界面和主要逻辑集中在 [index.html](index.html)
+- 使用原生 JavaScript 管理状态和交互
+- 使用 Tailwind CSS CDN 和 Font Awesome 处理样式与图标
+- 数据保存在浏览器 `localStorage`，当前存储键为 `dailyPlannerPro_v16`
+- 支持 JSON 导入和导出，便于做本地备份
+
+## 使用方式
+
+1. 下载或克隆这个仓库
+2. 直接在浏览器中打开 [index.html](index.html)
+3. 创建目标和待办事项后，数据会自动保存在当前浏览器
+
+## 数据说明
+
+- 默认使用浏览器本地存储保存数据
+- 如果清除浏览器站点数据、更换浏览器或更换设备，数据不会自动同步
+- 可以通过设置面板导出 JSON，再在其他环境中导入
+
+## 项目状态与限制
+
+- 这是一个已经上线的静态网页项目
+- 当前版本没有账号系统，也没有云端同步
+- 使用方式是单用户、本地优先
+- 数据依赖浏览器本地存储，因此需要手动备份
+
+## 截图
+
+### 日历视图
 
 ![Calendar view](assets/screenshots/calendar-view.jpg)
 
-### Dashboard View
+### 看板视图
 
 ![Dashboard view](assets/screenshots/dashboard-view.jpg)
 
-### Settings And Backup Tools
+### 设置与数据工具
 
 ![Settings view](assets/screenshots/settings-view.jpg)
 
-## 我为什么做它 / Why I Built It
+## 我在项目中的工作
 
-我想做一个打开就能用的轻量级规划工具，把目标、任务和时间安排放在同一个界面里，而不是分散在多个应用中。
-这个项目的重点不是复杂系统，而是把个人规划流程做得清晰、顺手、低门槛。
-
-I wanted a lightweight planner that opens instantly and keeps goals, tasks, and scheduling in one place instead of spreading them across multiple apps.
-The focus of this project is not system complexity. It is about making personal planning clear, fast, and approachable.
-
-## 核心功能 / Features
-
-- 目标管理：创建、编辑、删除、恢复目标，并按截止日期追踪进度。
-- 待办管理：支持独立任务、关联任务、完成状态切换和批量整理。
-- 日历视图：按日期查看目标、任务和时间压力。
-- 仪表盘视图：把目标、待办和已完成内容集中在一个界面里。
-- 重复任务：支持按天生成重复任务。
-- 个性化设置：支持主题色、背景和分类配置。
-- 数据备份：支持 JSON 导出与导入，便于本地备份和迁移。
-
-- Goal management: create, edit, delete, restore, and track goals by deadline.
-- Task management: supports independent tasks, goal-linked tasks, completion toggles, and bulk organization.
-- Calendar view: shows goals, tasks, and deadline pressure by date.
-- Dashboard view: brings active goals, to-dos, and completed items into one screen.
-- Repeating tasks: supports daily repeat generation.
-- Visual customization: includes theme, background, and category settings.
-- Data backup: supports JSON export and import for local backup and transfer.
-
-## 技术实现 / Tech Notes
-
-- 单文件应用，核心界面和逻辑集中在 [index.html](index.html)。
-- 使用原生 JavaScript 管理状态和交互逻辑。
-- 使用 Tailwind CSS CDN 和 Font Awesome 处理基础样式与图标。
-- 数据保存在浏览器 `localStorage`，当前使用的存储键是 `dailyPlannerPro_v16`。
-- 无构建流程、无数据库、无服务端部署要求。
-
-- The app is primarily implemented in a single file: [index.html](index.html).
-- State and interactions are handled with vanilla JavaScript.
-- Tailwind CSS CDN and Font Awesome are used for styling and icons.
-- Data is stored in browser `localStorage` under the key `dailyPlannerPro_v16`.
-- There is no build step, database, or backend deployment requirement.
-
-## 本地运行方式 / How To Run
-
-1. 下载或克隆这个仓库。
-2. 直接在浏览器中打开 [index.html](index.html)。
-3. 创建目标和任务后，数据会自动保存在当前浏览器。
-
-1. Download or clone this repository.
-2. Open [index.html](index.html) directly in a browser.
-3. After you create goals and tasks, the data is saved automatically in the current browser.
-
-## 数据存储说明 / Data Persistence
-
-- 所有数据默认保存在当前浏览器的本地存储中。
-- 如果清除浏览器站点数据、切换浏览器或更换设备，本地数据不会自动同步。
-- 可以通过设置面板导出 JSON 备份，再在另一台设备中导入。
-
-- All data is stored in the current browser's local storage by default.
-- If you clear browser site data, switch browsers, or change devices, the data will not sync automatically.
-- You can export a JSON backup from the settings panel and import it on another device.
-
-## 限制与后续计划 / Limitations And Next Steps
-
-- 当前版本没有账号系统或云端同步。
-- 当前版本是单用户、本地优先的使用方式。
-- 数据依赖浏览器本地存储，因此需要手动备份。
-- 后续可以继续扩展为 GitHub Pages 在线演示、多设备同步或更细致的统计视图。
-
-- The current version has no account system or cloud sync.
-- The current version is designed as a single-user, local-first tool.
-- Data depends on browser local storage, so manual backup is important.
-- Future extensions could include a GitHub Pages demo, multi-device sync, or more detailed analytics views.
-
-## 作者贡献 / My Contribution
-
-- 我定义了这个工具的使用场景、功能范围和交互流程。
-- 我围绕“目标 + 日历 + 待办”的结构持续迭代界面和功能细节。
-- 我完成了前端页面组织、本地数据流和备份机制的实现与整理。
-
-- I defined the use case, feature scope, and interaction flow for this tool.
-- I iterated on the UI and feature details around a goals plus calendar plus tasks workflow.
-- I implemented and organized the front-end structure, local data flow, and backup behavior.
+- 定义了项目的使用场景、功能范围和交互方式
+- 设计了“目标 + 待办 + 日历”的信息组织结构
+- 实现了前端页面、本地数据流、截止日期展示和备份机制
 
 ## License
 
-This project is released under the MIT License.
+本项目采用 MIT License。
